@@ -3,7 +3,18 @@ import argparse
 import os
 import time
 import random
-
+def request_file(initial_url, file_to_download, output):
+    url = initial_url + file_to_download
+    resp = urllib3.request("GET", url, retries=False, timeout=30)
+    time.sleep(random.randint(1,3))
+    if resp.status == 200:
+        with open(output+file_to_download, 'wb') as f:
+            f.write(resp.data)
+        print("Retrieved "+file_to_download)
+    else:
+        print("Failed to retrieve " + file_to_download + ", retrying")
+        request_file(initial_url, file_to_download, output)
+        
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--list-path', help='File path where the list of files to download is stored', type=str)
@@ -34,15 +45,8 @@ def main():
     print(files_already_downloaded)
 
     for file_to_download in files_to_download:
-    #file_to_download = files_to_download[0]
         if (file_to_download not in files_already_downloaded):
-            url = initial_url + file_to_download
-            resp = urllib3.request("GET", url, retries=False, timeout=30)
-            if resp.status == 200:
-                with open(args.output+file_to_download, 'wb') as f:
-                    f.write(resp.data)
-                print("Retrieved "+file_to_download+"\n")
-            time.sleep(random.randint(1,5))
+            request_file(initial_url, file_to_download, args.output)
 
 if __name__ == '__main__':
     main()
