@@ -1,5 +1,8 @@
 import urllib3
 import argparse
+import os
+import time
+import random
 
 def main():
     parser = argparse.ArgumentParser()
@@ -25,15 +28,20 @@ def main():
         for line in list_file:
             files_to_download.append(line.strip())
     initial_url = "https://cs7ns1.scss.tcd.ie/?shortname="+args.shortname+"&myfilename="
+    
+    files_already_downloaded = os.listdir(args.output)
+    print("These files have already been downloaded, so will not be downloaded again")
+    print(files_already_downloaded)
 
-    #for file_to_download in files_to_download:
-    #    print(file_to_download)
-    file_to_download = files_to_download[0]
-    url = initial_url+file_to_download
-    print(url)
-    resp = urllib3.request("GET", initial_url, retries=False, timeout=30)
-    print(resp.status)
-    print(resp.data)
+    for file_to_download in files_to_download:
+    #file_to_download = files_to_download[0]
+        if (file_to_download not in files_already_downloaded):
+            url = initial_url + file_to_download
+            resp = urllib3.request("GET", url, retries=False, timeout=30)
+            with open(args.output+file_to_download, 'wb') as f:
+                f.write(resp.data)
+            print("Retrieved "+file_to_download+"\n")
+            time.sleep(random.randint(1,5))
 
 if __name__ == '__main__':
     main()
