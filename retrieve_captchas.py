@@ -38,9 +38,10 @@ def main():
         if (file_to_download not in files_already_downloaded):
             url = initial_url + file_to_download
             resp = urllib3.request("GET", url, retries=False, timeout=30)
-            with open(args.output+file_to_download, 'wb') as f:
-                f.write(resp.data)
-            print("Retrieved "+file_to_download+"\n")
+            if resp.status == 200:
+                with open(args.output+file_to_download, 'wb') as f:
+                    f.write(resp.data)
+                print("Retrieved "+file_to_download+"\n")
             time.sleep(random.randint(1,5))
 
 if __name__ == '__main__':
