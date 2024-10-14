@@ -1,7 +1,7 @@
 import argparse
 import os
 import cv2
-import time
+import numpy as np
 
 def main():
     parser = argparse.ArgumentParser()
@@ -26,11 +26,14 @@ def main():
         image_size = h*w
         mser = cv2.MSER_create()
         mser.setMaxArea(int(image_size/2))
-        mser.setMinArea(10)
+        mser.setMinArea(100)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) #Converting to GrayScale
         _, bw = cv2.threshold(gray, 0.0, 255.0, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+        kernel = np.ones((3, 3), np.uint8)
+        dilated = cv2.dilate(bw, kernel, iterations=1)
+        eroded = cv2.erode(dilated, kernel, iterations=1)
 
-        regions, rects = mser.detectRegions(bw)
+        regions, rects = mser.detectRegions(eroded)
 
         for (x, y, w, h) in rects:
             cv2.rectangle(img, (x, y), (x+w, y+h), color=(255, 0, 255), thickness=1)
