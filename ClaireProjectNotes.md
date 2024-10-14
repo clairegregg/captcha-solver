@@ -12,3 +12,6 @@ This included a wait to ensure the device was not overloaded if retries were nec
 
 With this file, I created a python script to retrieve all of the captchas, using python library `urllib3` which was already installed on the pi. This script loops through all of the files described in the file list, and requests them (with a randomised 1-5s delay between requests to prevent throttling).
 
+## Splitting the captcha to help identify characters
+
+At this point, I was blocked from continuing on the pi as I lost access, so I did this step on my laptop. Followed help from https://stackoverflow.com/questions/42502176/opencv-extract-letters-from-string-using-python
