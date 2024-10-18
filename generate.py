@@ -21,6 +21,8 @@ def main():
         '--output-dir', help='Where to store the generated captchas', type=str)
     parser.add_argument(
         '--symbols', help='File with the symbols to use in captchas', type=str)
+    parser.add_argument(
+        '--font', help='Path for font to use', type=str)
     args = parser.parse_args()
 
     if args.width is None:
@@ -47,8 +49,12 @@ def main():
         print("Please specify the captcha symbols file")
         exit(1)
 
+    if args.font is None:
+        print("Please specify the font")
+        exit(1)
+
     captcha_generator = captcha.image.ImageCaptcha(
-        width=args.width, height=args.height)
+        width=args.width, height=args.height, fonts=[args.font])
 
     symbols_file = open(args.symbols, 'r')
     captcha_symbols = symbols_file.readline().strip()
