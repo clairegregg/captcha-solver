@@ -77,6 +77,7 @@ def segment(cleaned):
     _, rects = mser.detectRegions(cleaned)
 
     char_images = []
+    rects = sorted(rects, key=lambda x: x[0])
     for (x, y, w, h) in rects:
         char_images.append(cleaned[y:y+h, x:x+w])
 
