@@ -73,9 +73,14 @@ def segment(cleaned):
     image_size = h*w
     mser = cv2.MSER_create()
     mser.setMaxArea(int(image_size/2))
-    mser.setMinArea(10)
+    mser.setMinArea(100)
     _, rects = mser.detectRegions(cleaned)
-    return rects
+
+    char_images = []
+    for (x, y, w, h) in rects:
+        char_images.append(cleaned[y:y+h, x:x+w])
+
+    return char_images
 
 def main():
     parser = argparse.ArgumentParser()
@@ -97,11 +102,11 @@ def main():
         img = cv2.imread(os.path.join(args.captcha_dir, x))
         clean = remove_noise(img, False)
         
-        rects = segment(clean)
-        for (x, y, w, h) in rects:
-            cv2.rectangle(img, (x, y), (x+w, y+h), color=(255, 0, 255), thickness=1)
-        cv2.imshow("Cleaned up", img)
-        cv2.waitKey()
+        chars = segment(clean)
+        for i, char in enumerate(chars):
+            cv2.imshow("Character "+str(i), char)
+            cv2.waitKey()
+        
 
 
 if __name__ == "__main__":
