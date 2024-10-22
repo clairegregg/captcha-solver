@@ -17,4 +17,6 @@ With this file, I created a python script to retrieve all of the captchas, using
 At this point, I was blocked from continuing on the pi as I lost access, so I did this step on my laptop. Followed help from https://stackoverflow.com/questions/42502176/opencv-extract-letters-from-string-using-python
 
 
-After a lot of difficulty, I found https://medium.com/analytics-vidhya/solving-noisy-text-captchas-126734c3c717 which I decided to follow instead.
+After a lot of difficulty, I found https://medium.com/analytics-vidhya/solving-noisy-text-captchas-126734c3c717 which I decided to follow instead. 
+
+This code makes use of the scipy.ndimage, which is not supported on a 32-bit architecture, which this project should be deployed to. However, opencv (which does work on a 32 bit architecture) does not support rectangular inputs to perform a median filter, which is used to remove noise from captchas. I used ChatGPT to generate code to perform a median filter with a rectangular filter shape, and modified the generated code to use BORDER_REFLECT for padding instead of BORDER_CONSTANT.

@@ -2,7 +2,6 @@ import argparse
 import os
 import cv2
 import numpy as np
-import scipy.ndimage
 
 def remove_circles(img):
     hough_circle_locations = cv2.HoughCircles(img, method=cv2.HOUGH_GRADIENT, dp=1, minDist=1, param1 = 50, param2 = 5, minRadius = 0, maxRadius = 2)
@@ -14,6 +13,23 @@ def remove_circles(img):
             r = int(circle[2])
             img = cv2.circle(img, center = (x, y), radius = r, color = (255), thickness = 2)
     return img
+
+def median_blur_rectangular(image, k_height, k_width):
+    # Pad the image to handle borders
+    padded_image = cv2.copyMakeBorder(image, k_height//2, k_height//2, k_width//2, k_width//2, cv2.BORDER_REFLECT, value=0)
+    
+    # Create an empty output image
+    output = np.zeros_like(image)
+    
+    # Iterate over each pixel in the image
+    for y in range(image.shape[0]):
+        for x in range(image.shape[1]):
+            # Extract the neighborhood (window)
+            window = padded_image[y:y + k_height, x:x + k_width]
+            
+            # Compute the median (for binary, it's just majority vote in the window)
+            output[y, x] = np.median(window)
+    return output
 
 def remove_noise(img_path, display):
     img = cv2.imread(img_path)
@@ -29,10 +45,10 @@ def remove_noise(img_path, display):
     # 2. Initial noise removal - erosion, then scipy median filtering to remove lines and circles
     img = cv2.erode(img, np.ones((2,2), np.uint8), iterations=1)
     img = ~img # Black letters, white background
-    img = scipy.ndimage.median_filter(img, (5,1)) # Remove lateral lines
-    img = scipy.ndimage.median_filter(img, (1,3)) # Remove circles
+    img = median_blur_rectangular(img, 5, 1)
+    img = median_blur_rectangular(img, 1, 3) # Remove circles
     img = cv2.erode(img, np.ones((2,2), np.uint8), iterations=1) # Dilate image (inverted) to original level
-    img = scipy.ndimage.median_filter(img, (3, 3)) # Remove any weak noise
+    img = cv2.medianBlur(img, 3) # Remove any weak noise
     if display:
         cv2.imshow("Initial cleanup", img) 
         cv2.waitKey()
@@ -45,7 +61,7 @@ def remove_noise(img_path, display):
 
     # 4. Final cleanup
     img = cv2.dilate(img, np.ones((3, 3), np.uint8), iterations = 1) # Erosion for cleanup
-    img = scipy.ndimage.median_filter(img, (5, 1)) # Remove any extra noise
+    img = median_blur_rectangular(img, 5, 1)
     img = cv2.erode(img, np.ones((3, 3), np.uint8), iterations = 2) # Dilate image to make it look like the original
     img = cv2.dilate(img, np.ones((3, 3), np.uint8), iterations = 1) # Erode for final cleanup
     if display:
@@ -70,8 +86,8 @@ def main():
         exit(1)
 
     x = os.listdir(args.captcha_dir)[0]
-    for x in os.listdir(args.captcha_dir):
-    # if True:
+    # for x in os.listdir(args.captcha_dir):
+    if True:
         img = remove_noise(os.path.join(args.captcha_dir, x), False)
         cv2.imshow("Cleaned up", img)
         cv2.waitKey()
