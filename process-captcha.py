@@ -21,25 +21,39 @@ def main():
     #for x in os.listdir(args.captcha_dir):
     if True:
         img = cv2.imread(os.path.join(args.captcha_dir, x))
-        
+
+        # 1. Upscale the image
         (h, w) = img.shape[:2]
+        upscaled_points = (w*5, h*5)
+        upscaled = cv2.resize(img, upscaled_points, interpolation=cv2.INTER_LINEAR)
+
+        # 2. Convert to grayscale
+        gray = cv2.cvtColor(upscaled, cv2.COLOR_BGR2GRAY) 
+
+        # 3. Dilate then erode the images to remove noise
+        kernel = np.ones((13, 13), np.uint8)
+        dilated = cv2.dilate(gray, kernel, iterations=1)
+        cv2.imshow("Dilated", dilated) 
+        cv2.waitKey()
+        eroded = cv2.erode(dilated, kernel, iterations=1)
+        cv2.imshow("Eroded", eroded) 
+        cv2.waitKey()
+        
+        # 4. Use mser region detection to find detected characters
+        (h, w) = upscaled.shape[:2]
         image_size = h*w
         mser = cv2.MSER_create()
-        mser.setMaxArea(int(image_size/2))
-        mser.setMinArea(100)
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) #Converting to GrayScale
-        _, bw = cv2.threshold(gray, 0.0, 255.0, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-        kernel = np.ones((3, 3), np.uint8)
-        dilated = cv2.dilate(bw, kernel, iterations=1)
-        eroded = cv2.erode(dilated, kernel, iterations=1)
-
-        regions, rects = mser.detectRegions(eroded)
+        mser.setMaxArea(int(image_size/10))
+        mser.setMinArea(int(image_size/100))
+        _, rects = mser.detectRegions(eroded)
 
         for (x, y, w, h) in rects:
-            cv2.rectangle(img, (x, y), (x+w, y+h), color=(255, 0, 255), thickness=1)
+            cv2.rectangle(upscaled, (x, y), (x+w, y+h), color=(255, 0, 255), thickness=1)
         
-        cv2.imshow("Bounded", img) 
+        cv2.imshow("Bounded", upscaled) 
         cv2.waitKey()
+        # cv2.imwrite(os.path.join(
+        #         args.captcha_dir, 'test'  + '.png'), cv2.GaussianBlur(src=edges, ksize=(5, 5), sigmaX=0.5))
 
 
 if __name__ == "__main__":
