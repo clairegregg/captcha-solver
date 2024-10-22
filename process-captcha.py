@@ -31,9 +31,7 @@ def median_blur_rectangular(image, k_height, k_width):
             output[y, x] = np.median(window)
     return output
 
-def remove_noise(img_path, display):
-    img = cv2.imread(img_path)
-
+def remove_noise(img, display):
     # 1. Shift image colour - to greyscale, then binary, then inverted
     img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, img = cv2.threshold(img, 230, 255, cv2.THRESH_BINARY)
@@ -69,7 +67,15 @@ def remove_noise(img_path, display):
         cv2.waitKey()
 
     return img
-    
+
+def segment(cleaned):
+    (h, w) = cleaned.shape[:2]
+    image_size = h*w
+    mser = cv2.MSER_create()
+    mser.setMaxArea(int(image_size/2))
+    mser.setMinArea(10)
+    _, rects = mser.detectRegions(cleaned)
+    return rects
 
 def main():
     parser = argparse.ArgumentParser()
@@ -88,7 +94,12 @@ def main():
     x = os.listdir(args.captcha_dir)[0]
     # for x in os.listdir(args.captcha_dir):
     if True:
-        img = remove_noise(os.path.join(args.captcha_dir, x), False)
+        img = cv2.imread(os.path.join(args.captcha_dir, x))
+        clean = remove_noise(img, False)
+        
+        rects = segment(clean)
+        for (x, y, w, h) in rects:
+            cv2.rectangle(img, (x, y), (x+w, y+h), color=(255, 0, 255), thickness=1)
         cv2.imshow("Cleaned up", img)
         cv2.waitKey()
 
