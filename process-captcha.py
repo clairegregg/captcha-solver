@@ -2,6 +2,58 @@ import argparse
 import os
 import cv2
 import numpy as np
+import scipy.ndimage
+
+def remove_circles(img):
+    hough_circle_locations = cv2.HoughCircles(img, method=cv2.HOUGH_GRADIENT, dp=1, minDist=1, param1 = 50, param2 = 5, minRadius = 0, maxRadius = 2)
+    if hough_circle_locations is not None:
+        circles = hough_circle_locations[0]
+        for circle in circles:
+            x = int(circle[0])
+            y = int(circle[1])
+            r = int(circle[2])
+            img = cv2.circle(img, center = (x, y), radius = r, color = (255), thickness = 2)
+    return img
+
+def remove_noise(img_path, display):
+    img = cv2.imread(img_path)
+
+    # 1. Shift image colour - to greyscale, then binary, then inverted
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    _, img = cv2.threshold(img, 230, 255, cv2.THRESH_BINARY)
+    img = ~img # White letters, black background
+    if display:
+        cv2.imshow("Binary", img) 
+        cv2.waitKey()
+
+    # 2. Initial noise removal - erosion, then scipy median filtering to remove lines and circles
+    img = cv2.erode(img, np.ones((2,2), np.uint8), iterations=1)
+    img = ~img # Black letters, white background
+    img = scipy.ndimage.median_filter(img, (5,1)) # Remove lateral lines
+    img = scipy.ndimage.median_filter(img, (1,3)) # Remove circles
+    img = cv2.erode(img, np.ones((2,2), np.uint8), iterations=1) # Dilate image (inverted) to original level
+    img = scipy.ndimage.median_filter(img, (3, 3)) # Remove any weak noise
+    if display:
+        cv2.imshow("Initial cleanup", img) 
+        cv2.waitKey()
+
+    # 3. Remove circles from image
+    img = remove_circles(img)
+    if display:
+        cv2.imshow("Circles removed", img) 
+        cv2.waitKey()
+
+    # 4. Final cleanup
+    img = cv2.dilate(img, np.ones((3, 3), np.uint8), iterations = 1) # Erosion for cleanup
+    img = scipy.ndimage.median_filter(img, (5, 1)) # Remove any extra noise
+    img = cv2.erode(img, np.ones((3, 3), np.uint8), iterations = 2) # Dilate image to make it look like the original
+    img = cv2.dilate(img, np.ones((3, 3), np.uint8), iterations = 1) # Erode for final cleanup
+    if display:
+        cv2.imshow("Final", img)
+        cv2.waitKey()
+
+    return img
+    
 
 def main():
     parser = argparse.ArgumentParser()
@@ -18,42 +70,11 @@ def main():
         exit(1)
 
     x = os.listdir(args.captcha_dir)[0]
-    #for x in os.listdir(args.captcha_dir):
-    if True:
-        img = cv2.imread(os.path.join(args.captcha_dir, x))
-
-        # 1. Upscale the image
-        (h, w) = img.shape[:2]
-        upscaled_points = (w*5, h*5)
-        upscaled = cv2.resize(img, upscaled_points, interpolation=cv2.INTER_LINEAR)
-
-        # 2. Convert to grayscale
-        gray = cv2.cvtColor(upscaled, cv2.COLOR_BGR2GRAY) 
-
-        # 3. Dilate then erode the images to remove noise
-        kernel = np.ones((13, 13), np.uint8)
-        dilated = cv2.dilate(gray, kernel, iterations=1)
-        cv2.imshow("Dilated", dilated) 
+    for x in os.listdir(args.captcha_dir):
+    # if True:
+        img = remove_noise(os.path.join(args.captcha_dir, x), False)
+        cv2.imshow("Cleaned up", img)
         cv2.waitKey()
-        eroded = cv2.erode(dilated, kernel, iterations=1)
-        cv2.imshow("Eroded", eroded) 
-        cv2.waitKey()
-        
-        # 4. Use mser region detection to find detected characters
-        (h, w) = upscaled.shape[:2]
-        image_size = h*w
-        mser = cv2.MSER_create()
-        mser.setMaxArea(int(image_size/10))
-        mser.setMinArea(int(image_size/100))
-        _, rects = mser.detectRegions(eroded)
-
-        for (x, y, w, h) in rects:
-            cv2.rectangle(upscaled, (x, y), (x+w, y+h), color=(255, 0, 255), thickness=1)
-        
-        cv2.imshow("Bounded", upscaled) 
-        cv2.waitKey()
-        # cv2.imwrite(os.path.join(
-        #         args.captcha_dir, 'test'  + '.png'), cv2.GaussianBlur(src=edges, ksize=(5, 5), sigmaX=0.5))
 
 
 if __name__ == "__main__":

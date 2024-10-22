@@ -15,3 +15,6 @@ With this file, I created a python script to retrieve all of the captchas, using
 ## Splitting the captcha to help identify characters
 
 At this point, I was blocked from continuing on the pi as I lost access, so I did this step on my laptop. Followed help from https://stackoverflow.com/questions/42502176/opencv-extract-letters-from-string-using-python
+
+
+After a lot of difficulty, I found https://medium.com/analytics-vidhya/solving-noisy-text-captchas-126734c3c717 which I decided to follow instead.
