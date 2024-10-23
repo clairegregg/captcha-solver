@@ -131,8 +131,8 @@ def resize_and_center_image(img, target_size=(100, 100)):
     
     return new_img
 
-
-def segment(cleaned, index=0, visualize=True, visualization_dir='visualizations'):
+# Please note that if you set visuailize to True then you need to pass in a unique index into this function (otherwise files will get overwritten)
+def segment(cleaned, index = 0, visualize=False, visualization_dir='visualizations'):
     os.makedirs(visualization_dir, exist_ok=True)
     
     _, thresh = cv2.threshold(cleaned, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
@@ -263,7 +263,6 @@ def segment(cleaned, index=0, visualize=True, visualization_dir='visualizations'
                 char_images_with_positions.append((second_x, resize_and_center_image(second_char)))
                 char_images_with_positions.append((third_x, resize_and_center_image(third_char)))
             
-            # change back to if 
             elif w > 100:
                 # This is likely an image with four overlapping characters
                 column_sums = np.sum(char_image == 0, axis=0)
@@ -383,8 +382,7 @@ def main():
             # cv2.imwrite(clean_output_path, clean)
 
             # Segment the cleaned image into individual characters
-            chars = segment(clean, idx)
-            
+            chars = segment(clean, index=idx, visualize=True)
         
             for i, char in enumerate(chars):
                 char_filename = f"{os.path.splitext(filename)[0]}_char_{i}.png"
