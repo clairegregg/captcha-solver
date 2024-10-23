@@ -39,3 +39,10 @@ Also added a way to handle \ in images - filenames cannot contain. I replace the
 
 Also added handling for if preprocessing doesnt find any characters.
 
+## Basic ML model
+
+Making use of existing code, modifying to use our preprocessing and training data, and to only accept captchas of length 1.
+
+```
+py train.py --width=100 --height=100 --batch-size=32 --train-dataset=claire-files/training-files --validate-dataset=claire-files/validation-files --epochs=10 --symbols=symbols.txt --output-model-name=claire-files/model
+```
