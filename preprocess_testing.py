@@ -132,7 +132,9 @@ def resize_and_center_image(img, target_size=(100, 100)):
     return new_img
 
 
-def segment(cleaned):
+def segment(cleaned, index, visualize=True, visualization_dir='visualizations'):
+    os.makedirs(visualization_dir, exist_ok=True)
+    
     _, thresh = cv2.threshold(cleaned, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
     dist_transform = cv2.distanceTransform(thresh, cv2.DIST_L2, 5)
     dist_transform = cv2.normalize(dist_transform, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
@@ -152,24 +154,193 @@ def segment(cleaned):
     # Generate character segments using contours
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
-    char_images = []
-    for cnt in contours:
+    # Initialize a list to store character images with their x-coordinates
+    char_images_with_positions = []
+    
+    for idx, cnt in enumerate(contours):
         x, y, w, h = cv2.boundingRect(cnt)
         # Remove characters that are likely just noise
         if w > 6 and h > 6:
-            if w > 40:
-                # This is likely an image that has overlapping characters
-                # Split the image into two halves
-                midpoint = x + w // 2
+            char_image = cleaned[y:y+h, x:x+w]
+            if w > 40 and w <= 70:
+                # This is likely an image that has two overlapping characters
+                column_sums = np.sum(char_image == 0, axis=0)
+                padding_value = 0.3
+                margin_length = int(char_image.shape[1] * padding_value)
                 
-                # Left half
-                char_images.append(resize_and_center_image(cleaned[y:y+h, x:midpoint]))
+                new_interval_start = margin_length
+                new_interval_end = char_image.shape[1] - margin_length
                 
-                # Right half
-                char_images.append(resize_and_center_image(cleaned[y:y+h, midpoint:x+w]))
-            else:
-                char_images.append(resize_and_center_image(cleaned[y:y+h, x:x+w]))
+                # Ensure indices are valid
+                if new_interval_start >= new_interval_end:
+                    new_interval_start = 0
+                    new_interval_end = char_image.shape[1]
+                
+                # Find the optimal split column
+                sub_column_sums = column_sums[new_interval_start:new_interval_end]
+                divider_offset = np.argmin(sub_column_sums) + new_interval_start
+                
+                # Visualization
+                if visualize:
+                    vis_image = cv2.cvtColor(char_image, cv2.COLOR_GRAY2BGR)
+                    h_img = char_image.shape[0]
+                    # Draw margin lines (in red)
+                    cv2.line(vis_image, (new_interval_start, 0), (new_interval_start, h_img), (0, 0, 255), 1)
+                    cv2.line(vis_image, (new_interval_end, 0), (new_interval_end, h_img), (0, 0, 255), 1)
+                    # Draw split line (in green)
+                    cv2.line(vis_image, (divider_offset, 0), (divider_offset, h_img), (0, 255, 0), 1)
+                    # Save the visualization image
+                    vis_filename = f'visualization_{index}_{idx}.png'
+                    vis_output_path = os.path.join(visualization_dir, vis_filename)
+                    cv2.imwrite(vis_output_path, vis_image)
+                
+                # Split the image at the divider offset
+                left_char = char_image[:, :divider_offset]
+                right_char = char_image[:, divider_offset:]
+                
+                # Adjust x-coordinates for split characters
+                left_x = x
+                right_x = x + divider_offset
+                
+                # Append the resized and centered images along with their x-coordinates
+                char_images_with_positions.append((left_x, resize_and_center_image(left_char)))
+                char_images_with_positions.append((right_x, resize_and_center_image(right_char)))
+            elif w > 70 and w <= 100:
+                # This is likely an image with three overlapping characters
+                column_sums = np.sum(char_image == 0, axis=0)
+                # padding_value = 0.2
+                padding_value = 0.15
+                w_img = char_image.shape[1]
+                h_img = char_image.shape[0]
+                
+                # First divider
+            # first_split_pos = int(w_img * 0.25)
+                first_split_pos = int(w_img / 3)
+                first_search_start = max(0, int(first_split_pos - w_img * padding_value))
+                first_search_end = min(w_img, int(first_split_pos + w_img * padding_value))
+                first_sub_column_sums = column_sums[first_search_start:first_search_end]
+                first_divider_offset = np.argmin(first_sub_column_sums) + first_search_start
 
+                # Second divider
+            # second_split_pos = int(w_img * 0.75)
+                second_split_pos = int(2 * w_img / 3)
+                second_search_start = max(0, int(second_split_pos - w_img * padding_value))
+                second_search_end = min(w_img, int(second_split_pos + w_img * padding_value))
+                second_sub_column_sums = column_sums[second_search_start:second_search_end]
+                second_divider_offset = np.argmin(second_sub_column_sums) + second_search_start
+
+                # Visualization
+                if visualize:
+                    vis_image = cv2.cvtColor(char_image, cv2.COLOR_GRAY2BGR)
+                    # Draw estimated split positions (yellow lines)
+                    cv2.line(vis_image, (first_split_pos, 0), (first_split_pos, h_img), (0, 255, 255), 1)
+                    cv2.line(vis_image, (second_split_pos, 0), (second_split_pos, h_img), (0, 255, 255), 1)
+                    # Draw search areas (blue lines)
+                    cv2.line(vis_image, (first_search_start, 0), (first_search_start, h_img), (255, 0, 0), 1)
+                    cv2.line(vis_image, (first_search_end, 0), (first_search_end, h_img), (255, 0, 0), 1)
+                    cv2.line(vis_image, (second_search_start, 0), (second_search_start, h_img), (255, 0, 0), 1)
+                    cv2.line(vis_image, (second_search_end, 0), (second_search_end, h_img), (255, 0, 0), 1)
+                    # Draw split lines (green lines)
+                    cv2.line(vis_image, (first_divider_offset, 0), (first_divider_offset, h_img), (0, 255, 0), 1)
+                    cv2.line(vis_image, (second_divider_offset, 0), (second_divider_offset, h_img), (0, 255, 0), 1)
+                    # Save the visualization image
+                    vis_filename = f'visualization_{index}_{idx}.png'
+                    vis_output_path = os.path.join(visualization_dir, vis_filename)
+                    cv2.imwrite(vis_output_path, vis_image)
+                
+                # Split the image at the divider offsets
+                first_char = char_image[:, :first_divider_offset]
+                second_char = char_image[:, first_divider_offset:second_divider_offset]
+                third_char = char_image[:, second_divider_offset:]
+                
+                # Adjust x-coordinates for split characters
+                first_x = x
+                second_x = x + first_divider_offset
+                third_x = x + second_divider_offset
+                
+                # Append the resized and centered images along with their x-coordinates
+                char_images_with_positions.append((first_x, resize_and_center_image(first_char)))
+                char_images_with_positions.append((second_x, resize_and_center_image(second_char)))
+                char_images_with_positions.append((third_x, resize_and_center_image(third_char)))
+            
+            # change back to if 
+            elif w > 100:
+                # This is likely an image with four overlapping characters
+                column_sums = np.sum(char_image == 0, axis=0)
+                padding_value = 0.1
+                w_img = char_image.shape[1]
+                h_img = char_image.shape[0]
+                
+                # First divider
+                first_split_pos = int(w_img / 4)
+                first_search_start = max(0, int(first_split_pos - w_img * padding_value))
+                first_search_end = min(w_img, int(first_split_pos + w_img * padding_value))
+                first_sub_column_sums = column_sums[first_search_start:first_search_end]
+                first_divider_offset = np.argmin(first_sub_column_sums) + first_search_start
+
+                # Second divider
+                second_split_pos = int(w_img / 2)
+                second_search_start = max(0, int(second_split_pos - w_img * padding_value))
+                second_search_end = min(w_img, int(second_split_pos + w_img * padding_value))
+                second_sub_column_sums = column_sums[second_search_start:second_search_end]
+                second_divider_offset = np.argmin(second_sub_column_sums) + second_search_start
+
+                # Third divider
+                third_split_pos = int(3 * w_img / 4)
+                third_search_start = max(0, int(third_split_pos - w_img * padding_value))
+                third_search_end = min(w_img, int(third_split_pos + w_img * padding_value))
+                third_sub_column_sums = column_sums[third_search_start:third_search_end]
+                third_divider_offset = np.argmin(third_sub_column_sums) + third_search_start
+
+                # Visualization
+                if visualize:
+                    vis_image = cv2.cvtColor(char_image, cv2.COLOR_GRAY2BGR)
+                    # Draw estimated split positions (yellow lines)
+                    cv2.line(vis_image, (first_split_pos, 0), (first_split_pos, h_img), (0, 255, 255), 1)
+                    cv2.line(vis_image, (second_split_pos, 0), (second_split_pos, h_img), (0, 255, 255), 1)
+                    cv2.line(vis_image, (third_split_pos, 0), (third_split_pos, h_img), (0, 255, 255), 1)
+                    # Draw search areas (blue lines)
+                    cv2.line(vis_image, (first_search_start, 0), (first_search_start, h_img), (255, 0, 0), 1)
+                    cv2.line(vis_image, (first_search_end, 0), (first_search_end, h_img), (255, 0, 0), 1)
+                    cv2.line(vis_image, (second_search_start, 0), (second_search_start, h_img), (255, 0, 0), 1)
+                    cv2.line(vis_image, (second_search_end, 0), (second_search_end, h_img), (255, 0, 0), 1)
+                    cv2.line(vis_image, (third_search_start, 0), (third_search_start, h_img), (255, 0, 0), 1)
+                    cv2.line(vis_image, (third_search_end, 0), (third_search_end, h_img), (255, 0, 0), 1)
+                    # Draw split lines (green lines)
+                    cv2.line(vis_image, (first_divider_offset, 0), (first_divider_offset, h_img), (0, 255, 0), 1)
+                    cv2.line(vis_image, (second_divider_offset, 0), (second_divider_offset, h_img), (0, 255, 0), 1)
+                    cv2.line(vis_image, (third_divider_offset, 0), (third_divider_offset, h_img), (0, 255, 0), 1)
+                    # Save the visualization image
+                    vis_filename = f'visualization_{index}_{idx}.png'
+                    vis_output_path = os.path.join(visualization_dir, vis_filename)
+                    cv2.imwrite(vis_output_path, vis_image)
+                
+                # Split the image at the divider offsets
+                first_char = char_image[:, :first_divider_offset]
+                second_char = char_image[:, first_divider_offset:second_divider_offset]
+                third_char = char_image[:, second_divider_offset:third_divider_offset]
+                fourth_char = char_image[:, third_divider_offset:]
+                
+                # Adjust x-coordinates for split characters
+                first_x = x
+                second_x = x + first_divider_offset
+                third_x = x + second_divider_offset
+                fourth_x = x + third_divider_offset
+                
+                # Append the resized and centered images along with their x-coordinates
+                char_images_with_positions.append((first_x, resize_and_center_image(first_char)))
+                char_images_with_positions.append((second_x, resize_and_center_image(second_char)))
+                char_images_with_positions.append((third_x, resize_and_center_image(third_char)))
+                char_images_with_positions.append((fourth_x, resize_and_center_image(fourth_char)))
+            else:
+                # For single character images
+                char_images_with_positions.append((x, resize_and_center_image(char_image)))
+                print()
+    
+    # Sort the character images based on their x-coordinate to maintain order
+    char_images_with_positions.sort(key=lambda tup: tup[0])
+    char_images = [img for x_pos, img in char_images_with_positions]
+    
     return char_images
 
 def preprocess(img):
@@ -198,7 +369,8 @@ def main():
     os.makedirs(cleaned_dir, exist_ok=True)
 
     # Iterate over all images in the captcha directory
-    for filename in os.listdir(args.captcha_dir):
+    # for filename in os.listdir(args.captcha_dir):
+    for idx, filename in enumerate(os.listdir(args.captcha_dir)):
         if filename.endswith(".png") or filename.endswith(".jpg"):
             img_path = os.path.join(args.captcha_dir, filename)
             img = cv2.imread(img_path)
@@ -212,13 +384,17 @@ def main():
             # cv2.imwrite(clean_output_path, clean)
 
             # Segment the cleaned image into individual characters
-            chars = segment(clean)
+            chars = segment(clean, idx)
             
         
             for i, char in enumerate(chars):
                 char_filename = f"{os.path.splitext(filename)[0]}_char_{i}.png"
                 char_output_path = os.path.join(args.output, char_filename)
                 cv2.imwrite(char_output_path, char)
+        
+        # below can be uncommented if you want to iterate through the results one at a time for testing purposes (can be deleted if necessary)
+        # input('Press "y" to continue to the next iteration: ')
+
 
 if __name__ == "__main__":
     main()
