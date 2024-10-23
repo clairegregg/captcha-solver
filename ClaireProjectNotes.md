@@ -54,3 +54,12 @@ Using existing convert.py, written for the previous assignment
 ```
 py convert.py --model=claire-files/model
 ```
+
+## Classifying
+
+Classification done with existing code, modifying to identify each character individually. This version of the code was run on my laptop for testing, but the equivalent change has been made for the raspberry pi
+```
+python3 classify_64bit.py --captcha-dir=claire-files/small-captchas --output=claire-files/output.csv --symbols=symbols.txt --username=cgregg --model=claire-files/model.tflite --verbose=true
+```
+
+While doing this, I noticed the model is training on "rgb" data, which is not actually being used (it's trained on preprocessed data), so this should be changed.

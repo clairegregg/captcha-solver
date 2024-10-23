@@ -132,7 +132,7 @@ def resize_and_center_image(img, target_size=(100, 100)):
     return new_img
 
 
-def segment(cleaned, index, visualize=True, visualization_dir='visualizations'):
+def segment(cleaned, index=0, visualize=True, visualization_dir='visualizations'):
     os.makedirs(visualization_dir, exist_ok=True)
     
     _, thresh = cv2.threshold(cleaned, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
@@ -335,7 +335,6 @@ def segment(cleaned, index, visualize=True, visualization_dir='visualizations'):
             else:
                 # For single character images
                 char_images_with_positions.append((x, resize_and_center_image(char_image)))
-                print()
     
     # Sort the character images based on their x-coordinate to maintain order
     char_images_with_positions.sort(key=lambda tup: tup[0])
@@ -345,7 +344,7 @@ def segment(cleaned, index, visualize=True, visualization_dir='visualizations'):
 
 def preprocess(img):
     img = remove_noise(img, False)
-    chars = segment(img)
+    chars = segment(img, visualize=False)
     return chars
 
 
