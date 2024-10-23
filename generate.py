@@ -44,8 +44,8 @@ def generate_image_clean(captcha_symbols, length, output_dir, captcha_generator)
 
     image = numpy.array(captcha_generator.generate_image(random_str))
     cleaned_chars = preprocess_testing.preprocess(image)
-
-    cv2.imwrite(image_path, cleaned_chars[0]) # This code assumes a one character captcha
+    if len(cleaned_chars) > 0: # Deal with when no chars are identified
+        cv2.imwrite(image_path, cleaned_chars[0]) # This code assumes a one character captcha
 
 def generate(width, height, length, count, output_dir, symbols, font, clean):
     captcha_generator = captcha.image.ImageCaptcha(

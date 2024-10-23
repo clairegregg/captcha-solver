@@ -36,3 +36,6 @@ py generate-clean.py --font-dir=claire-files/fonts --output-dir=claire-files/tra
 ```
 
 Also added a way to handle \ in images - filenames cannot contain. I replace them with ~ in image names, and will deal with this translation when training the ML model.
+
+Also added handling for if preprocessing doesnt find any characters.
+
