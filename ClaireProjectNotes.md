@@ -46,3 +46,11 @@ Making use of existing code, modifying to use our preprocessing and training dat
 ```
 py train.py --width=100 --height=100 --batch-size=32 --train-dataset=claire-files/training-files --validate-dataset=claire-files/validation-files --epochs=10 --symbols=symbols.txt --output-model-name=claire-files/model
 ```
+
+## Converting Tensorflow model to TFLite
+
+Using existing convert.py, written for the previous assignment
+
+```
+py convert.py --model=claire-files/model
+```

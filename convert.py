@@ -1,4 +1,4 @@
-# Convert an existing tensorflow model to a LiteRT model
+# Convert an existing tensorflow model (stored as *.h5 and *.json) to a LiteRT model
 import tensorflow as tf
 import keras
 import argparse
@@ -25,6 +25,11 @@ def main():
   converter = tf.lite.TFLiteConverter.from_keras_model(model)
   tflite_model = converter.convert()
 
+  filename = args.model+'.tflite'
+
   # Save the model.
-  with open('finalmodel.tflite', 'wb') as f:
+  with open(filename, 'wb') as f:
     f.write(tflite_model)
+
+if __name__ == "__main__":
+  main()
