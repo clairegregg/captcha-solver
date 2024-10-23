@@ -34,3 +34,5 @@ Files generated with
 ```
 py generate-clean.py --font-dir=claire-files/fonts --output-dir=claire-files/training-data --symbols=symbols.txt --count=10
 ```
+
+Also added a way to handle \ in images - filenames cannot contain. I replace them with ~ in image names, and will deal with this translation when training the ML model.

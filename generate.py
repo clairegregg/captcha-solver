@@ -13,6 +13,10 @@ def generate_image(captcha_symbols, length, output_dir, captcha_generator):
     random_str = ''.join([random.choice(captcha_symbols)
                             for j in range(length)])
     image_path = os.path.join(output_dir, random_str+'.png')
+
+    # Replace any \ with ~ for filename writing
+    if "\\" in image_path:
+        image_path.replace("\\", "~")
     if os.path.exists(image_path):
         version = 1
         while os.path.exists(os.path.join(output_dir, random_str + '_' + str(version) + '.png')):
