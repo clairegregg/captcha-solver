@@ -172,6 +172,11 @@ def segment(cleaned):
 
     return char_images
 
+def preprocess(img):
+    img = remove_noise(img, False)
+    chars = segment(img)
+    return chars
+
 
 def main():
     parser = argparse.ArgumentParser()

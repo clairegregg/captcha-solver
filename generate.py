@@ -35,9 +35,9 @@ def generate_image_clean(captcha_symbols, length, output_dir, captcha_generator)
             output_dir, random_str + '_' + str(version) + '.png')
 
     image = numpy.array(captcha_generator.generate_image(random_str))
-    clean = preprocess_testing.remove_noise(image, False)
-    normalised = preprocess_testing.segment(clean)
-    cv2.imwrite(image_path, normalised[0])
+    cleaned_chars = preprocess_testing.preprocess(image)
+
+    cv2.imwrite(image_path, cleaned_chars[0]) # This code assumes a one character captcha
 
 def generate(width, height, length, count, output_dir, symbols, font, clean):
     captcha_generator = captcha.image.ImageCaptcha(
