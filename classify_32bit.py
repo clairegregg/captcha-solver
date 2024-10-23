@@ -9,6 +9,7 @@ import cv2
 import numpy
 import argparse
 import tflite_runtime.interpreter as tflite
+import preprocess_testing
 
 def decode(characters, y):
     y = numpy.argmax(numpy.array(y), axis=1)
