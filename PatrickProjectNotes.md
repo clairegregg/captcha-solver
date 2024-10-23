@@ -1,0 +1,4 @@
+Continuing on from claires work in preprocessing the image, i decided to work on enhancing the segment fucntion in our process-captcha file. Currently segementing the charcters would lead to noise being classified as a charcter and also the charcaters where all of different size. 
+
+I first added a filter to remove any charcter that was under 6 pixels in height or width as this was likely noise. I then worked on seperating overlappign charcters which had been ideintified as one character. I intially trued using a watershed algorthim using open cv however this was unsuccessful and i could not seperate the images. I then used a more rudementary approach which states that any chacrter with a width more than 40 is an overalpping charcter and to half these images. I came to the number of 40 through alot of trial and error. This halfing technique offered decent results however I plan to work to improve this technique. 
+
