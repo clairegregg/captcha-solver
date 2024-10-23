@@ -7,7 +7,58 @@ import random
 import cv2
 import argparse
 import captcha.image
+import preprocess_testing
 
+def generate_image(captcha_symbols, length, output_dir, captcha_generator):
+    random_str = ''.join([random.choice(captcha_symbols)
+                            for j in range(length)])
+    image_path = os.path.join(output_dir, random_str+'.png')
+    if os.path.exists(image_path):
+        version = 1
+        while os.path.exists(os.path.join(output_dir, random_str + '_' + str(version) + '.png')):
+            version += 1
+        image_path = os.path.join(
+            output_dir, random_str + '_' + str(version) + '.png')
+
+    image = numpy.array(captcha_generator.generate_image(random_str))
+    cv2.imwrite(image_path, image)
+
+def generate_image_clean(captcha_symbols, length, output_dir, captcha_generator):
+    random_str = ''.join([random.choice(captcha_symbols)
+                            for j in range(length)])
+    image_path = os.path.join(output_dir, random_str+'.png')
+    if os.path.exists(image_path):
+        version = 1
+        while os.path.exists(os.path.join(output_dir, random_str + '_' + str(version) + '.png')):
+            version += 1
+        image_path = os.path.join(
+            output_dir, random_str + '_' + str(version) + '.png')
+
+    image = numpy.array(captcha_generator.generate_image(random_str))
+    clean = preprocess_testing.remove_noise(image, False)
+    normalised = preprocess_testing.segment(clean)
+    cv2.imwrite(image_path, normalised[0])
+
+def generate(width, height, length, count, output_dir, symbols, font, clean):
+    captcha_generator = captcha.image.ImageCaptcha(
+        width=width, height=height, fonts=[font])
+
+    symbols_file = open(symbols, 'r')
+    captcha_symbols = symbols_file.readline().strip()
+    symbols_file.close()
+
+    print("Generating captchas with symbol set {" + captcha_symbols + "}")
+
+    if not os.path.exists(output_dir):
+        print("Creating output directory " + output_dir)
+        os.makedirs(output_dir)
+
+    for i in range(count):
+        if clean:
+            generate_image_clean(captcha_symbols, length, output_dir, captcha_generator)
+        else:
+            generate_image(captcha_symbols, length, output_dir, captcha_generator)
+        
 
 def main():
     parser = argparse.ArgumentParser()
@@ -53,32 +104,7 @@ def main():
         print("Please specify the font")
         exit(1)
 
-    captcha_generator = captcha.image.ImageCaptcha(
-        width=args.width, height=args.height, fonts=[args.font])
-
-    symbols_file = open(args.symbols, 'r')
-    captcha_symbols = symbols_file.readline().strip()
-    symbols_file.close()
-
-    print("Generating captchas with symbol set {" + captcha_symbols + "}")
-
-    if not os.path.exists(args.output_dir):
-        print("Creating output directory " + args.output_dir)
-        os.makedirs(args.output_dir)
-
-    for i in range(args.count):
-        random_str = ''.join([random.choice(captcha_symbols)
-                             for j in range(args.length)])
-        image_path = os.path.join(args.output_dir, random_str+'.png')
-        if os.path.exists(image_path):
-            version = 1
-            while os.path.exists(os.path.join(args.output_dir, random_str + '_' + str(version) + '.png')):
-                version += 1
-            image_path = os.path.join(
-                args.output_dir, random_str + '_' + str(version) + '.png')
-
-        image = numpy.array(captcha_generator.generate_image(random_str))
-        cv2.imwrite(image_path, image)
+    generate(args.width, args.height, args.length, args.count, args.output_dir, args.symbols, args.font, False)
 
 
 if __name__ == '__main__':

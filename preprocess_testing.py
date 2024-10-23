@@ -202,9 +202,9 @@ def main():
             clean = remove_noise(img, False)
 
             # Save the cleaned image in 'patrick-files/cleaned-files'
-            clean_filename = f"{os.path.splitext(filename)[0]}_cleaned.png"
-            clean_output_path = os.path.join(cleaned_dir, clean_filename)
-            cv2.imwrite(clean_output_path, clean)
+            # clean_filename = f"{os.path.splitext(filename)[0]}_cleaned.png"
+            # clean_output_path = os.path.join(cleaned_dir, clean_filename)
+            # cv2.imwrite(clean_output_path, clean)
 
             # Segment the cleaned image into individual characters
             chars = segment(clean)

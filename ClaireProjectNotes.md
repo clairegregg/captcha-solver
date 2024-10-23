@@ -23,3 +23,14 @@ This code makes use of the scipy.ndimage, which is not supported on a 32-bit arc
 ## Splitting the captcha to help identify characters
 
 Followed help from https://stackoverflow.com/questions/42502176/opencv-extract-letters-from-string-using-python - just for a basic rectangle splitting approach. This should be improved in future, but for now it's passable.
+
+## Generating training data
+
+Added code to generate training data - generates a 1 letter captcha, uses existing preprocessing, and writes it to folder (depending on font used).
+
+For now the training for all fonts will be completed together, but the data is being separated based on font in case we move on in future to have font specific models.
+
+Files generated with 
+```
+py generate-clean.py --font-dir=claire-files/fonts --output-dir=claire-files/training-data --symbols=symbols.txt --count=10
+```
