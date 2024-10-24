@@ -9,9 +9,16 @@ import argparse
 import captcha.image
 import preprocess_testing
 
-def generate_image(captcha_symbols, length, output_dir, captcha_generator):
+def generate_image(captcha_symbols, length, output_dir, captcha_generator, vary_size):
+    
+    # Checks if captcha length should vary and if so generates a random value between 2 and max length else use length param
+    if vary_size:
+        captcha_length = random.randint(2, length)  
+    else:
+        captcha_length = length
+        
     random_str = ''.join([random.choice(captcha_symbols)
-                            for j in range(length)])
+                            for j in range(captcha_length)])
     filename_str = random_str
     if "\\" in filename_str:
         filename_str = filename_str.replace("\\", "~")
@@ -27,10 +34,9 @@ def generate_image(captcha_symbols, length, output_dir, captcha_generator):
     image = numpy.array(captcha_generator.generate_image(random_str))
     cv2.imwrite(image_path, image)
 
-def generate(width, height, length, count, output_dir, symbols, font):
+def generate(width, height, length, count, output_dir, symbols, font, vary_size):
     captcha_generator = captcha.image.ImageCaptcha(
         width=width, height=height, fonts=[font])
-
     symbols_file = open(symbols, 'r')
     captcha_symbols = symbols_file.readline().strip()
     symbols_file.close()
@@ -42,7 +48,8 @@ def generate(width, height, length, count, output_dir, symbols, font):
         os.makedirs(output_dir)
 
     for _ in range(count):
-        generate_image(captcha_symbols, length, output_dir, captcha_generator)
+        generate_image(captcha_symbols, length, output_dir, captcha_generator, vary_size)
+        
         
 
 def main():
@@ -59,6 +66,8 @@ def main():
         '--symbols', help='File with the symbols to use in captchas', type=str)
     parser.add_argument(
         '--font', help='Path for font to use', type=str)
+    parser.add_argument(
+        '--vary-char-size', help='Vary the number of captcha characters (default: False)', action='store_true', default=False)
     args = parser.parse_args()
 
     if args.width is None:
@@ -88,8 +97,7 @@ def main():
     if args.font is None:
         print("Please specify the font")
         exit(1)
-
-    generate(args.width, args.height, args.length, args.count, args.output_dir, args.symbols, args.font)
+    generate(args.width, args.height, args.length, args.count, args.output_dir, args.symbols, args.font, args.vary_char_size)
 
 
 if __name__ == '__main__':
