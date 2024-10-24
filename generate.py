@@ -27,27 +27,7 @@ def generate_image(captcha_symbols, length, output_dir, captcha_generator):
     image = numpy.array(captcha_generator.generate_image(random_str))
     cv2.imwrite(image_path, image)
 
-def generate_image_clean(captcha_symbols, length, output_dir, captcha_generator):
-    random_str = ''.join([random.choice(captcha_symbols)
-                            for j in range(length)])
-    filename_str = random_str
-    if "\\" in filename_str:
-        filename_str = filename_str.replace("\\", "~")
-    image_path = os.path.join(output_dir, filename_str+'.png')
-    
-    if os.path.exists(image_path):
-        version = 1
-        while os.path.exists(os.path.join(output_dir, filename_str + '_' + str(version) + '.png')):
-            version += 1
-        image_path = os.path.join(
-            output_dir, filename_str + '_' + str(version) + '.png')
-
-    image = numpy.array(captcha_generator.generate_image(random_str))
-    cleaned_chars = preprocess_testing.preprocess(image)
-    if len(cleaned_chars) > 0: # Deal with when no chars are identified
-        cv2.imwrite(image_path, cleaned_chars[0]) # This code assumes a one character captcha
-
-def generate(width, height, length, count, output_dir, symbols, font, clean):
+def generate(width, height, length, count, output_dir, symbols, font):
     captcha_generator = captcha.image.ImageCaptcha(
         width=width, height=height, fonts=[font])
 
@@ -61,11 +41,8 @@ def generate(width, height, length, count, output_dir, symbols, font, clean):
         print("Creating output directory " + output_dir)
         os.makedirs(output_dir)
 
-    for i in range(count):
-        if clean:
-            generate_image_clean(captcha_symbols, length, output_dir, captcha_generator)
-        else:
-            generate_image(captcha_symbols, length, output_dir, captcha_generator)
+    for _ in range(count):
+        generate_image(captcha_symbols, length, output_dir, captcha_generator)
         
 
 def main():
@@ -112,7 +89,7 @@ def main():
         print("Please specify the font")
         exit(1)
 
-    generate(args.width, args.height, args.length, args.count, args.output_dir, args.symbols, args.font, False)
+    generate(args.width, args.height, args.length, args.count, args.output_dir, args.symbols, args.font)
 
 
 if __name__ == '__main__':

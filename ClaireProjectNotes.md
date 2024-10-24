@@ -63,3 +63,5 @@ python3 classify_64bit.py --captcha-dir=claire-files/small-captchas --output=cla
 ```
 
 While doing this, I noticed the model is training on "rgb" data, which is not actually being used (it's trained on preprocessed data), so this should be changed.
+
+I fixed this in the next change, where I moved the preprocessing into the train step. Now, the model is being trained as though the image is greyscale (only 1 channel) - there could be more work here to change the model to be trained based on a binary (b/w) image.

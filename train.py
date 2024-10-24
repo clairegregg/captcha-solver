@@ -11,6 +11,7 @@ import cv2
 import os
 from pathlib import Path
 import warnings
+import preprocess_testing
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -60,7 +61,7 @@ class ImageSequence(keras.utils.Sequence):
 
     def __getitem__(self, idx):
         X = numpy.zeros((self.batch_size, self.captcha_height,
-                        self.captcha_width, 3), dtype=numpy.float32)
+                        self.captcha_width, 1), dtype=numpy.float32)
         y = numpy.zeros((self.batch_size, len(self.captcha_symbols)),
                          dtype=numpy.uint8)
 
@@ -76,7 +77,9 @@ class ImageSequence(keras.utils.Sequence):
             # We have to scale the input pixel values to the range [0, 1] for
             # Keras so we divide by 255 since the image is read in as 8-bit RGB
             raw_data = cv2.imread(random_image_file)
-            processed_data = numpy.array(raw_data) / 255
+            preprocessed_data = preprocess_testing.preprocess(raw_data)[0]
+            processed_data = numpy.array(preprocessed_data) / 255
+            processed_data = numpy.expand_dims(processed_data, axis=-1)
             X[i] = processed_data
 
             # We have a little hack here - we save captchas as TEXT_num.png if there is more than one captcha with the text "TEXT"
@@ -155,7 +158,7 @@ def main():
     # with tf.device('/device:GPU:0'):
     with tf.device('/device:CPU:0'):
         # with tf.device('/device:XLA_CPU:0'):
-        model = create_model(len(captcha_symbols), (args.height, args.width, 3))
+        model = create_model(len(captcha_symbols), (args.height, args.width, 1))
 
         if args.input_model is not None:
             model.load_weights(args.input_model)

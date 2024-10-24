@@ -68,7 +68,7 @@ def main():
 
         for char in preprocessed_characters:
             image = numpy.array(char, dtype=numpy.float32) / 255.0
-            image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+            image = numpy.expand_dims(image, axis=-1)
 
             (c, h, w) = image.shape
             image = image.reshape([-1, c, h, w])
