@@ -50,3 +50,18 @@ Example command (for 32 bit devices - requires tflite_runtime to be pip installe
 python3 classify_32bit.py --captcha-dir=claire-files/small-captchas --output=claire-files/output.csv --symbols=symbols.txt --username=cgregg --model=claire-files/model.tflite --verbose=true
 ```
 
+## Instructions for training and running font classification model **add commands**
+
+### 1. Generate captchas
+I recommend generating 50,000 captchas for each font (100,000 total). Each captcha should have a width of 192 and a height of 96, and captchas should be generated using a random number of characters from 1 to 6 (to most accurately represent the data provided by Ciaran).
+
+
+### 2. Train model
+I have created a Convolutional Neural Network with preselected hyperparameters (please note these parameters can be changed by being passed as arguments in the command line, but they have my default values). You must pass in a directory that contains two subdirectories in which each of these directories contains examples of each font. The names of these subdirectories should be the respective font names. Note that if you use the generate method in part 1, this should be done automatically. 
+
+
+### 3. Classify captchas by font 
+Once you have trained your model, you can call the classify_captchas_font.py class and pass it to the directory of your captchas. This will generate a new directory that will contain two sub-directories (one for each of your captchas categorised by font)
+
+
+
