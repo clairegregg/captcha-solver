@@ -1,9 +1,26 @@
 import tensorflow as tf
 from tensorflow.keras import layers, models, callbacks, optimizers
 import os
+import argparse
 
+# Set up argument parser
+parser.add_argument('--data_dir', type=str, required=True, help='Directory containing training data')
+parser.add_argument('--batch_size', type=int, default=64, help='Batch size for training')
+parser.add_argument('--img_height', type=int, default=96, help='Height of the input images')
+parser.add_argument('--img_width', type=int, default=192, help='Width of the input images')
+parser.add_argument('--num_classes', type=int, default=2, help='Number of classes in the dataset')
+parser.add_argument('--epochs', type=int, default=50, help='Number of epochs for training')
 
-data_dir = 'patrick-files/training-data'
+# Parse the arguments
+args = parser.parse_args()
+
+# Parameters
+data_dir = args.data_dir
+batch_size = args.batch_size
+img_height = args.img_height
+img_width = args.img_width
+num_classes = args.num_classes
+epochs = args.epochs
 
 # Parameters
 batch_size = 64  
