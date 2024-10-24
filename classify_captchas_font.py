@@ -14,8 +14,9 @@ IMAGE_HEIGHT = 96
 IMAGE_WIDTH = 192
 COLOR_MODE = 'grayscale'                           
 
-# Just going to hard code these but change as necessary 
-CLASS_NAMES = ['WildCrazy', 'cRAZYsTYLE']
+# # Just going to hard code these but change as necessary 
+# # these should essentially be the directory names 
+# CLASS_NAMES = ['WildCrazy', 'cRAZYsTYLE']
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Classify CAPTCHA images by font.')
@@ -36,6 +37,18 @@ def parse_arguments():
         type=str,
         default=MODEL_PATH,
         help=f'Path to the trained model file (default: {MODEL_PATH}).'
+    )
+    
+    parser.add_argument(
+        '-m', '--class-name-1',
+        type=str,
+        help=f'First font class name.'
+    )
+        
+    parser.add_argument(
+        '-m', '--class-name-2',
+        type=str,
+        help=f'Second font class name .'
     )
     return parser.parse_args()
 
@@ -75,7 +88,7 @@ def preprocess_image(img_path):
 
 def classify_images(model, input_dir, output_dir):
     # Create output directories if they don't exist
-    for class_name in CLASS_NAMES:
+    for class_name in class_names:
         class_dir = os.path.join(output_dir, class_name)
         os.makedirs(class_dir, exist_ok=True)
 
@@ -90,7 +103,7 @@ def classify_images(model, input_dir, output_dir):
 
             # Predict the class
             prediction = model.predict(img_array)
-            predicted_class = CLASS_NAMES[int(prediction[0][0] > 0.5)]  # Threshold at 0.5
+            predicted_class = class_names[int(prediction[0][0] > 0.5)]  # Threshold at 0.5
 
             # Define source and destination paths
             src = img_path
@@ -108,15 +121,16 @@ def main():
     input_dir = args.input_dir
     output_dir = args.output_dir
     model_path = args.model_path
+    class_names = [args.class_name_1, args.class_name_2]
 
     # Load the model
     model = load_trained_model(model_path)
 
     # Verify class names
-    print(f"Class names: {CLASS_NAMES}")
+    print(f"Class names: {class_names}")
 
     # Classify and organize images
-    classify_images(model, input_dir, output_dir)
+    classify_images(model, input_dir, output_dir, class_names)
     print("Classification and organization complete.")
 
 
