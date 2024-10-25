@@ -86,18 +86,21 @@ python3 classify_captchas_font.py --input_dir=patrick-files/captchas --output_di
 
 
 
-## Instructions for identifying the ideal minimum width value to identify number of overlapping characters
-One issue with segmentation is that if characters are touching, they will be categorised as one character. The preprocessing code handles this by defining a width value that ideintifies a given segmented character as actually containing 2, 3 or 4 overlapping characters (we can then attempt to split these characters up). To identify the values that are ideal for these values, you can run the code/commands below for each font (as the value changes per font).
+## Instructions for identifying the ideal values for identifying overlapping characters
+One issue with segmentation is that if characters are touching, they will be categorised as one character. The preprocessing code handles this by defining a width value that identifies a given segmented character as actually containing 2, 3 or 4 overlapping characters (we can then attempt to split these characters up). To identify the ideal values, you can run the code/commands below for each font (as the value changes per font).
 
 **Repeat the steps below once for each font**
 
-### 1. Generate captchas (this step and step 2 are optional; they give you the average character length, which can be used to inform your starting point when testing different values)
+### 1. Generate captchas (optional)
+**(this step and step 2 are optional; they give you the average character length, which can be used to inform your starting point when testing different values)**
+
 Generate 1 character-long captcha (I used 2000 for my testing, and the average code in part 2 below is hard coded for 2000 captchas). 
 ```
 python3 generate.py --width=192 --height=96 --font=patrick-files/fonts/WildCrazy.ttf --output-dir=patrick-files/training-data/WildCrazy/1-char-captchas --symbols=symbols.txt --count=2000 --length=1
 ```
 
-### 2. Calculate average character length (this is optional and only required if you carry out the above step as well)
+### 2. Calculate average character length (optional)
+**(this is optional and only required if you carry out the above step as well)**
 Once you have your 2000 captchas, you can call the code below, passing in the directory containing the 2000 1-character captchas to the code below. The average character length will be displayed to the console
 ```
 python3 get_char_average_size.py --captcha-dir=/location-of-1-char-captchas
