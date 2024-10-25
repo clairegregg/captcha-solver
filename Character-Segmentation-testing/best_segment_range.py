@@ -139,7 +139,7 @@ def segment(
                 char_images_with_positions.append((second_x, second_char))
                 char_images_with_positions.append((third_x, third_char))
             
-            elif w > 100:
+            elif w > four_char_min:
                 # This is likely an image with four overlapping characters
                 column_sums = np.sum(char_image == 0, axis=0)
                 padding_value = 0.1

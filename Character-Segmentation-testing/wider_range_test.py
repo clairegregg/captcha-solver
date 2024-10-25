@@ -224,8 +224,10 @@ def main():
         exit(1)
 
     # Define the refined ranges based on your top-performing combinations
-    two_char_min_values = range(35, 50)       # From 35 to 40 inclusive
-    three_char_min_values = range(50, 75)     # From 55 to 65 inclusive
+    # Below are some examples of the ranges i choose towards the end for one of my fonts so may be a good starting point 
+    # however set the values however you see fit (also you can reduce the combinations and the test will go faster obv)
+    two_char_min_values = range(35, 50)       # From 35 to 40 inclusive (can add steps if you like)
+    three_char_min_values = range(50, 75)     # From 55 to 65 inclusive (can add steps if you like)
     four_char_min_values = range(86, 105, 5)   # From 75 to 90 inclusive, step by 5 to reduce combinations
 
     combinations = []

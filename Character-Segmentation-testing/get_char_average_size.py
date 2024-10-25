@@ -31,42 +31,36 @@ def median_blur_rectangular(image, k_height, k_width):
             output[y, x] = np.median(window)
     return output
 
-def remove_noise(img, display):
+def remove_noise(orig_img, display):
     # 1. Shift image colour - to greyscale, then binary, then inverted
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    _, img = cv2.threshold(img, 230, 255, cv2.THRESH_BINARY)
-    img = ~img # White letters, black background
-    if display:
-        cv2.imshow("Binary", img) 
-        cv2.waitKey()
-
-    # 2. Initial noise removal - erosion, then scipy median filtering to remove lines and circles
-    img = cv2.erode(img, np.ones((2,2), np.uint8), iterations=1)
-    img = ~img # Black letters, white background
+    img = cv2.cvtColor(orig_img, cv2.COLOR_BGR2GRAY)
+    _, img = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
     img = median_blur_rectangular(img, 5, 1)
-    img = median_blur_rectangular(img, 1, 3) # Remove circles
-    img = cv2.erode(img, np.ones((2,2), np.uint8), iterations=1) # Dilate image (inverted) to original level
-    img = cv2.medianBlur(img, 3) # Remove any weak noise
-    if display:
-        cv2.imshow("Initial cleanup", img) 
-        cv2.waitKey()
+    img = median_blur_rectangular(img, 1, 3)
+    img = remove_circles(img)  
+    
+    # Find all connected components (with statistics)
+    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(img)
 
-    # 3. Remove circles from image
-    img = remove_circles(img)
-    if display:
-        cv2.imshow("Circles removed", img) 
-        cv2.waitKey()
+    # Define a minimum size threshold for components (in pixels)
+    min_size = 100
 
-    # 4. Final cleanup
-    img = cv2.dilate(img, np.ones((3, 3), np.uint8), iterations=1) # Erosion for cleanup
-    img = median_blur_rectangular(img, 5, 1)
-    img = cv2.erode(img, np.ones((3, 3), np.uint8), iterations=2) # Dilate image to make it look like the original
-    img = cv2.dilate(img, np.ones((3, 3), np.uint8), iterations=1) # Erode for final cleanup
-    if display:
-        cv2.imshow("Final", img)
-        cv2.waitKey()
+    # Create output image with white background
+    output_image = np.full(img.shape, 255, dtype=np.uint8)
 
-    return img
+    # Set large components to black
+    for i in range(1, num_labels):  # Skip label 0 for the background
+        if stats[i, cv2.CC_STAT_AREA] >= min_size:
+            output_image[labels == i] = 0  # Set large components to black
+
+    # Display images if needed
+    if display:
+        cv2.imshow('Original Image', orig_img)
+        cv2.imshow('Processed Image', output_image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+    return output_image
 
 
 # Please note that if you set visuailize to True then you need to pass in a unique index into this function (otherwise files will get overwritten)
@@ -115,19 +109,19 @@ def preprocess(img):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--captcha-dir', help='Where to read the captchas', type=str)
-    parser.add_argument('--output', help='Directory where the segmented captchas should be stored', type=str)
+    # parser.add_argument('--output', help='Directory where the segmented captchas should be stored', type=str)
     args = parser.parse_args()
 
     if args.captcha_dir is None:
         print("Please specify the directory with captchas to split")
         exit(1)
 
-    if args.output is None:
-        print("Please specify the path to the output files")
-        exit(1)
+    # if args.output is None:
+    #     print("Please specify the path to the output files")
+    #     exit(1)
 
     # Create directories if they don't exist
-    os.makedirs(args.output, exist_ok=True)
+    # os.makedirs(args.output, exist_ok=True)
     cleaned_dir = 'patrick-files/cleaned-files'
     os.makedirs(cleaned_dir, exist_ok=True)
 
@@ -166,7 +160,7 @@ def main():
         # # below can be uncommented if you want to iterate through the results one at a time for testing purposes (can be deleted if necessary)
         # input('Press "y" to continue to the next iteration: ')
     average_char_length = total_width / 2000
-    print(f'average character lenght is : {average_char_length}')
+    print(f'average character length is : {average_char_length}')
 
 
 if __name__ == "__main__":
