@@ -3,136 +3,10 @@ import os
 import cv2
 import numpy as np
 
-def remove_circles(img):
-    hough_circle_locations = cv2.HoughCircles(img, method=cv2.HOUGH_GRADIENT, dp=1, minDist=1, param1=50, param2=5, minRadius=0, maxRadius=2)
-    if hough_circle_locations is not None:
-        circles = hough_circle_locations[0]
-        for circle in circles:
-            x = int(circle[0])
-            y = int(circle[1])
-            r = int(circle[2])
-            img = cv2.circle(img, center=(x, y), radius=r, color=(255), thickness=2)
-    return img
-
-def median_blur_rectangular(image, k_height, k_width):
-    # Pad the image to handle borders
-    padded_image = cv2.copyMakeBorder(image, k_height//2, k_height//2, k_width//2, k_width//2, cv2.BORDER_REFLECT, value=0)
-    
-    # Create an empty output image
-    output = np.zeros_like(image)
-    
-    # Iterate over each pixel in the image
-    for y in range(image.shape[0]):
-        for x in range(image.shape[1]):
-            # Extract the neighborhood (window)
-            window = padded_image[y:y + k_height, x:x + k_width]
-            
-            # Compute the median (for binary, it's just majority vote in the window)
-            output[y, x] = np.median(window)
-    return output
-
-def remove_noise(img, display):
-    # 1. Shift image colour - to greyscale, then binary, then inverted
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    _, img = cv2.threshold(img, 230, 255, cv2.THRESH_BINARY)
-    img = ~img # White letters, black background
-    if display:
-        cv2.imshow("Binary", img) 
-        cv2.waitKey()
-
-    # 2. Initial noise removal - erosion, then scipy median filtering to remove lines and circles
-    img = cv2.erode(img, np.ones((2,2), np.uint8), iterations=1)
-    img = ~img # Black letters, white background
-    img = median_blur_rectangular(img, 5, 1)
-    img = median_blur_rectangular(img, 1, 3) # Remove circles
-    img = cv2.erode(img, np.ones((2,2), np.uint8), iterations=1) # Dilate image (inverted) to original level
-    img = cv2.medianBlur(img, 3) # Remove any weak noise
-    if display:
-        cv2.imshow("Initial cleanup", img) 
-        cv2.waitKey()
-
-    # 3. Remove circles from image
-    img = remove_circles(img)
-    if display:
-        cv2.imshow("Circles removed", img) 
-        cv2.waitKey()
-
-    # 4. Final cleanup
-    img = cv2.dilate(img, np.ones((3, 3), np.uint8), iterations=1) # Erosion for cleanup
-    img = median_blur_rectangular(img, 5, 1)
-    img = cv2.erode(img, np.ones((3, 3), np.uint8), iterations=2) # Dilate image to make it look like the original
-    img = cv2.dilate(img, np.ones((3, 3), np.uint8), iterations=1) # Erode for final cleanup
-    if display:
-        cv2.imshow("Final", img)
-        cv2.waitKey()
-
-    return img
-
-# ***Uncomment the below method if you dont want the overlapping characters to be split
-
-
-# def segment(cleaned):
-#     # Apply thresholding to get a binary image
-#     _, thresh = cv2.threshold(cleaned, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-    
-#     # Compute the Euclidean distance from every binary pixel to the nearest zero pixel
-#     dist_transform = cv2.distanceTransform(thresh, cv2.DIST_L2, 5)
-    
-#     # Normalize the distance image for better visualization and thresholding
-#     dist_transform = cv2.normalize(dist_transform, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
-    
-#     # Apply threshold to get the peaks in the distance transform
-#     _, sure_fg = cv2.threshold(dist_transform, 0.5 * dist_transform.max(), 255, 0)
-    
-#     # Use morphology to clean up the image, separating connected components
-#     kernel = np.ones((3, 3), np.uint8)
-#     sure_bg = cv2.dilate(thresh, kernel, iterations=5)
-    
-#     # Subtract the sure foreground from the sure background to get the unknown region
-#     sure_fg = np.uint8(sure_fg)
-#     unknown = cv2.subtract(sure_bg, sure_fg)
-    
-#     # Label the sure foreground and background
-#     _, markers = cv2.connectedComponents(sure_fg)
-    
-#     # Add one to all labels so that the background is labeled as 1
-#     markers = markers + 1
-    
-#     # Mark the unknown region as zero
-#     markers[unknown == 255] = 0
-    
-#     # Apply the watershed algorithm
-#     markers = cv2.watershed(cv2.cvtColor(cleaned, cv2.COLOR_GRAY2BGR), markers)
-    
-#     # Generate character segments using contours
-#     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    
-#     char_images = []
-#     for cnt in contours:
-#         x, y, w, h = cv2.boundingRect(cnt)
-#         if w > 5 and h > 5:
-#             char_images.append(cleaned[y:y+h, x:x+w])
-
-#     return char_images
-
-def resize_and_center_image(img, target_size=(100, 100)):
-    # Get current size of the character image
-    h, w = img.shape[:2]
-    
-    # Create a new blank image with the target size and fill it with white (background)
-    new_img = np.ones(target_size, dtype=np.uint8) * 255  # Assuming background is white
-    
-    # Compute the offset to center the image
-    x_offset = (target_size[1] - w) // 2
-    y_offset = (target_size[0] - h) // 2
-    
-    # Place the character image in the center of the new image
-    new_img[y_offset:y_offset + h, x_offset:x_offset + w] = img
-    
-    return new_img
-
 # Please note that if you set visuailize to True then you need to pass in a unique index into this function (otherwise files will get overwritten)
-def segment(cleaned, two_char_min , three_char_min, four_char_min, index = 0, visualize=False, visualization_dir='visualizations'):
+def segment(
+    cleaned, two_char_min , three_char_min, four_char_min, index = 0, visualize=False, visualization_dir='visualizations'
+            ):
     os.makedirs(visualization_dir, exist_ok=True)
     
     _, thresh = cv2.threshold(cleaned, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
@@ -157,12 +31,14 @@ def segment(cleaned, two_char_min , three_char_min, four_char_min, index = 0, vi
     # Initialize a list to store character images with their x-coordinates
     char_images_with_positions = []
     
+    # print(f'two_char_min: {two_char_min}, three_char_min: {three_char_min}, four_char_min: {four_char_min}')
+    
     for idx, cnt in enumerate(contours):
         x, y, w, h = cv2.boundingRect(cnt)
         # Remove characters that are likely just noise
         if w > 6 and h > 6:
             char_image = cleaned[y:y+h, x:x+w]
-            if w > 40 and w <= 70:
+            if w > two_char_min and w <= three_char_min:
                 # This is likely an image that has two overlapping characters
                 column_sums = np.sum(char_image == 0, axis=0)
                 padding_value = 0.3
@@ -203,9 +79,9 @@ def segment(cleaned, two_char_min , three_char_min, four_char_min, index = 0, vi
                 right_x = x + divider_offset
                 
                 # Append the resized and centered images along with their x-coordinates
-                char_images_with_positions.append((left_x, resize_and_center_image(left_char)))
-                char_images_with_positions.append((right_x, resize_and_center_image(right_char)))
-            elif w > 70 and w <= 100:
+                char_images_with_positions.append((left_x, left_char))
+                char_images_with_positions.append((right_x, right_char))
+            elif w > three_char_min and w <= four_char_min:
                 # This is likely an image with three overlapping characters
                 column_sums = np.sum(char_image == 0, axis=0)
                 # padding_value = 0.2
@@ -259,9 +135,9 @@ def segment(cleaned, two_char_min , three_char_min, four_char_min, index = 0, vi
                 third_x = x + second_divider_offset
                 
                 # Append the resized and centered images along with their x-coordinates
-                char_images_with_positions.append((first_x, resize_and_center_image(first_char)))
-                char_images_with_positions.append((second_x, resize_and_center_image(second_char)))
-                char_images_with_positions.append((third_x, resize_and_center_image(third_char)))
+                char_images_with_positions.append((first_x, first_char))
+                char_images_with_positions.append((second_x, second_char))
+                char_images_with_positions.append((third_x, third_char))
             
             elif w > 100:
                 # This is likely an image with four overlapping characters
@@ -327,13 +203,13 @@ def segment(cleaned, two_char_min , three_char_min, four_char_min, index = 0, vi
                 fourth_x = x + third_divider_offset
                 
                 # Append the resized and centered images along with their x-coordinates
-                char_images_with_positions.append((first_x, resize_and_center_image(first_char)))
-                char_images_with_positions.append((second_x, resize_and_center_image(second_char)))
-                char_images_with_positions.append((third_x, resize_and_center_image(third_char)))
-                char_images_with_positions.append((fourth_x, resize_and_center_image(fourth_char)))
+                char_images_with_positions.append((first_x, first_char))
+                char_images_with_positions.append((second_x, second_char))
+                char_images_with_positions.append((third_x, third_char))
+                char_images_with_positions.append((fourth_x, fourth_char))
             else:
                 # For single character images
-                char_images_with_positions.append((x, resize_and_center_image(char_image)))
+                char_images_with_positions.append((x, char_image))
     
     # Sort the character images based on their x-coordinate to maintain order
     char_images_with_positions.sort(key=lambda tup: tup[0])
@@ -341,61 +217,102 @@ def segment(cleaned, two_char_min , three_char_min, four_char_min, index = 0, vi
     
     return char_images
 
-def preprocess(img, two_char_min=40, three_char_min=60, four_char_min=80):
-    img = remove_noise(img, False)
-    chars = segment(img, visualize=False, two_char_min=two_char_min, three_char_min=three_char_min, four_char_min=four_char_min)
-    return chars
-
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--captcha-dir', help='Where to read the captchas', type=str)
-    parser.add_argument('--output', help='Directory where the segmented captchas should be stored', type=str)
-    # These are parameters that should be changed based on the font. They allow you to specify the boundaries of when we classify an image as overlapping for a given number of characters
-    # I have set the default values to good general ranges based on my testing 
-    parser.add_argument('--min-two-char', help='Mininum width where chracter is deemed as being two overlapping characters', type=int, default=40) 
-    parser.add_argument('--min-three-char', help='Mininum width where chracter is deemed as being three overlapping characters', type=int, default=60)
-    parser.add_argument('--min-four-char', help='Mininum width where chracter is deemed as being four overlapping characters', type=int, default=80)
     args = parser.parse_args()
 
     if args.captcha_dir is None:
         print("Please specify the directory with captchas to split")
         exit(1)
 
-    if args.output is None:
-        print("Please specify the path to the output files")
-        exit(1)
 
-    # Create directories if they don't exist
-    os.makedirs(args.output, exist_ok=True)
-    cleaned_dir = 'patrick-files/cleaned-files'
-    os.makedirs(cleaned_dir, exist_ok=True)
+    # WildCrazy - old
+    # two_char_min = [42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62]
+    # three_char_min = [68, 70, 72, 74, 76, 78, 80, 82, 84, 86, 88]
+    # four_char_min = [94, 96, 98, 100, 102, 104, 106, 108, 110, 112, 114]
+    
+    # WildCrazy - new
+    # two_char_min = [26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46]
+    # three_char_min = [52, 54, 56, 58, 60, 62, 64, 66, 68, 70, 72]
+    # four_char_min = [78, 80, 82, 84, 86, 88, 90, 92, 94, 96, 98]
+    
+    # # WildCrazy - final
+    # two_char_min = [40, 41, 42]
+    # three_char_min = [66, 67, 68]
+    # four_char_min = [92, 93, 94]
+    
+        # WildCrazy - additional test
+    # two_char_min = [40, 40, 40, 40, 40, 40, 40, 40]
+    # three_char_min = [66, 66, 66, 66, 66, 66, 66, 66]
+    # four_char_min = [92, 92, 92, 92, 92, 92, 92, 92, 101]
+   
+    # Crazystyle - old
+    # two_char_min = [36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56]
+    # three_char_min = [59, 61, 63, 65, 67, 69, 71, 73, 75, 77, 79]
+    # four_char_min = [82, 84, 86, 88, 90, 92, 94, 96, 98, 100, 102]
+    
+    # two_char_min = [18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 37]
+    # three_char_min = [41, 43, 45, 47, 49, 51, 53, 55, 57, 59, 60]
+    # four_char_min = [64, 66, 68, 70, 72, 74, 76, 78, 80, 82, 83]
+    
+    two_char_min = [36, 36, 36]
+    three_char_min = [64, 59 , 49]
+    four_char_min = [90, 82, 90]
+    
+    
+    correctly_segmented_per_batch = []
+    
+    for i in range(len(two_char_min)):
+        # print(f'testing value range: {i}')
+        # print(f'values are {two_char_min[i]}, {three_char_min[i]}, {four_char_min[i]}')
+        correctly_segmented = 0
+        for idx, filename in enumerate(os.listdir(args.captcha_dir)):
+            # if idx == 8:
+            #     break
+            if filename.endswith(".png") or filename.endswith(".jpg"):
+                
+                # Get the filename without the extension
+                file_base = filename.split('.')[0]
+            
+                # Check if there is a duplicate identifier (e.g., _2) and remove it for character count purposes
+                if "_" in file_base:
+                    file_base = "_".join(file_base.split("_")[:-1])
 
-    # Iterate over all images in the captcha directory
-    # for filename in os.listdir(args.captcha_dir):
-    for idx, filename in enumerate(os.listdir(args.captcha_dir)):
-        if filename.endswith(".png") or filename.endswith(".jpg"):
-            img_path = os.path.join(args.captcha_dir, filename)
-            img = cv2.imread(img_path)
+                # Get the number of characters by measuring the length of the remaining part of the filename
+                num_chars_in_filename = len(file_base)
+                
+                img_path = os.path.join(args.captcha_dir, filename)
+                # img = cv2.imread(img_path) #take in clean image
+                img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+                
+                # return the size of the segmented character
+                segmented_characters = segment(img, index=idx, visualize=False, two_char_min=two_char_min[i], three_char_min=three_char_min[i], four_char_min=four_char_min[i])
+                number_of_segmented_characters = len(segmented_characters)
+                
+                # print(f'number_of_segmented_characters : {number_of_segmented_characters}')
+                # print(f'num_chars_in_filename - {filename}: {num_chars_in_filename}')
 
-            # Clean the image
-            clean = remove_noise(img, False)
+                if number_of_segmented_characters == num_chars_in_filename:
+                    correctly_segmented += 1
+                #     # print('Correctly Segmented')
+                # else:
+                #     # print('Incorrectly Segmented')
 
-            # Save the cleaned image in 'patrick-files/cleaned-files'
-            # clean_filename = f"{os.path.splitext(filename)[0]}_cleaned.png"
-            # clean_output_path = os.path.join(cleaned_dir, clean_filename)
-            # cv2.imwrite(clean_output_path, clean)
-
-            # Segment the cleaned image into individual characters
-            chars = segment(clean, index=idx, visualize=False, two_char_min= args.min_two_char, three_char_min= args.min_three_char, four_char_min= args.min_four_char)
-        
-            for i, char in enumerate(chars):
-                char_filename = f"{os.path.splitext(filename)[0]}_char_{i}.png"
-                char_output_path = os.path.join(args.output, char_filename)
-                cv2.imwrite(char_output_path, char)
-        
+                if idx % 100 == 0:
+                    print(f'progress {idx}/2,000')
+                    
+        correctly_segmented_per_batch.append(correctly_segmented)
+        print(f'Batch {i + 1}/11 complete!')
         # below can be uncommented if you want to iterate through the results one at a time for testing purposes (can be deleted if necessary)
         # input('Press "y" to continue to the next iteration: ')
+    
+    print(f'Correctly Segmented Per batch : {correctly_segmented_per_batch}')
+    # Print the index of the highest value and the highest value itself
+    max_value = max(correctly_segmented_per_batch)
+    max_index = correctly_segmented_per_batch.index(max_value)
+    print(f'Highest value: {max_value}, at index: {max_index}')
 
 
 if __name__ == "__main__":

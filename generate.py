@@ -47,8 +47,10 @@ def generate(width, height, length, count, output_dir, symbols, font, vary_size)
         print("Creating output directory " + output_dir)
         os.makedirs(output_dir)
 
-    for _ in range(count):
+    for i in range(count):
         generate_image(captcha_symbols, length, output_dir, captcha_generator, vary_size)
+        if (i+1) % 100 == 0 or (i+1) == count: 
+            print(f"Generated {i+1}/{count} CAPTCHAs")
         
         
 
