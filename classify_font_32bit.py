@@ -6,7 +6,7 @@ import shutil
 import argparse
 
 # Configuration
-MODEL_PATH = 'best_captcha_font_classifier.keras'
+MODEL_PATH = 'captcha_font_classifier_final.keras'
 # INPUT_DIR = 'patrick-files/captchas'               
 # OUTPUT_DIR = 'patrick-files/captcha-categorized-by-font'         
 IMAGE_HEIGHT = 96

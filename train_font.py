@@ -11,6 +11,7 @@ parser.add_argument('--img_height', type=int, default=96, help='Height of the in
 parser.add_argument('--img_width', type=int, default=192, help='Width of the input images')
 parser.add_argument('--num_classes', type=int, default=2, help='Number of classes in the dataset')
 parser.add_argument('--epochs', type=int, default=50, help='Number of epochs for training')
+parser.add_argument('--output', type=str, default="captcha_font_classifier_final.keras", help="Where to store the model")
 
 # Parse the arguments
 args = parser.parse_args()
