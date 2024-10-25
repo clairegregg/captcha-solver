@@ -169,3 +169,22 @@ Top 10 combinations:
 10. Accuracy: 46.50%, two_char_min: 30, three_char_min: 60, four_char_min: 75
 ```
 Then (20,25), (45,50), (65,70) giving final best values of 22, 48, 67.
+
+## Training
+```
+python3 train.py --width=100 --height=100 --batch-size=64 --train-dataset=claire-files/training/DreamingofLilian --validate-dataset=claire-files/validate/DreamingofLilian --epochs=100 --symbols=symbols.txt --output-model-name=claire-files/dol --min-two-char=57 --min-three-char=123 --min-four-char=168
+```
+
+```
+python3 train.py --width=100 --height=100 --batch-size=128 --train-dataset=claire-files/training/TheJjester --validate-dataset=claire-files/validate/TheJjester --epochs=100 --symbols=symbols.txt --output-model-name=claire-files/jj --min-two-char=22 --min-three-char=48 --min-four-char=67
+```
+
+## Classifying
+
+```
+python3 classify_64bit.py --captcha-dir=claire-files/captchas-categorised/DreamingofLilian --output=dol-out.csv --symbols=symbols.txt --username=cgregg --model=claire-files/dol.tflite --verbose=true --min-two-char=57 --min-three-char=123 --min-four-char=168
+```
+
+```
+python3 classify_64bit.py --captcha-dir=claire-files/captchas-categorised/TheJjester --output=jj-out.csv --symbols=symbols.txt --username=cgregg --model=claire-files/jj.tflite --verbose=true --min-two-char=22 --min-three-char=48 --min-four-char=67
+```
