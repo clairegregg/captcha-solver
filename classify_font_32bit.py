@@ -39,13 +39,13 @@ def parse_arguments():
     )
     
     parser.add_argument(
-        '-m', '--class-name-1',
+        '-c', '--class-name-1',
         type=str,
         help=f'First font class name.'
     )
         
     parser.add_argument(
-        '-m', '--class-name-2',
+        '-d', '--class-name-2',
         type=str,
         help=f'Second font class name .'
     )
