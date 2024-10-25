@@ -124,7 +124,7 @@ python3 generate_2000_cleaned_images.py --captcha-dir=location-of-captchas-gener
 ### 5. Run Tests
 Now that we have our 2000 cleaned files, we can run some tests to check a wide range of values and see how many captchas have been segmented with the correct number of characters. We can then pick the best-performing values for each. 
 
-You can use the average char size as a good starting point for each value (i.e. set 2 characters overlapping at values around average character length * 2, for three: average char length *3, etc.
+You can use the average char size as a good starting point for each value (i.e. set the value for 2 characters overlapping at values around average character length * 2, for three: average char length *3, etc.
 
 The below code is useful for testing a wide range of values; you can vary the ranges for each as you see fit; see line 226 and below for the ranges. You can specify the range of each min value you would like to test along with the step size. The model will test the combination of all these ranges and return the top 10 best-performing values. You can then rerun with different values if you would like until you get a score you are happy with. 
 
