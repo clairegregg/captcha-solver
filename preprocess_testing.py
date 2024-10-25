@@ -31,89 +31,37 @@ def median_blur_rectangular(image, k_height, k_width):
             output[y, x] = np.median(window)
     return output
 
-def remove_noise(img, display):
+def remove_noise(orig_img, display):
     # 1. Shift image colour - to greyscale, then binary, then inverted
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    _, img = cv2.threshold(img, 230, 255, cv2.THRESH_BINARY)
-    img = ~img # White letters, black background
-    if display:
-        cv2.imshow("Binary", img) 
-        cv2.waitKey()
-
-    # 2. Initial noise removal - erosion, then scipy median filtering to remove lines and circles
-    img = cv2.erode(img, np.ones((2,2), np.uint8), iterations=1)
-    img = ~img # Black letters, white background
+    img = cv2.cvtColor(orig_img, cv2.COLOR_BGR2GRAY)
+    _, img = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
     img = median_blur_rectangular(img, 5, 1)
-    img = median_blur_rectangular(img, 1, 3) # Remove circles
-    img = cv2.erode(img, np.ones((2,2), np.uint8), iterations=1) # Dilate image (inverted) to original level
-    img = cv2.medianBlur(img, 3) # Remove any weak noise
+    img = median_blur_rectangular(img, 1, 3)
+    img = remove_circles(img)  
+    
+    # Find all connected components (with statistics)
+    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(img)
+
+    # Define a minimum size threshold for components (in pixels)
+    min_size = 100
+
+    # Create output image with white background
+    output_image = np.full(img.shape, 255, dtype=np.uint8)
+
+    # Set large components to black
+    for i in range(1, num_labels):  # Skip label 0 for the background
+        if stats[i, cv2.CC_STAT_AREA] >= min_size:
+            output_image[labels == i] = 0  # Set large components to black
+
+    # Display images if needed
     if display:
-        cv2.imshow("Initial cleanup", img) 
-        cv2.waitKey()
+        cv2.imshow('Original Image', orig_img)
+        cv2.imshow('Processed Image', output_image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
-    # 3. Remove circles from image
-    img = remove_circles(img)
-    if display:
-        cv2.imshow("Circles removed", img) 
-        cv2.waitKey()
+    return output_image
 
-    # 4. Final cleanup
-    img = cv2.dilate(img, np.ones((3, 3), np.uint8), iterations=1) # Erosion for cleanup
-    img = median_blur_rectangular(img, 5, 1)
-    img = cv2.erode(img, np.ones((3, 3), np.uint8), iterations=2) # Dilate image to make it look like the original
-    img = cv2.dilate(img, np.ones((3, 3), np.uint8), iterations=1) # Erode for final cleanup
-    if display:
-        cv2.imshow("Final", img)
-        cv2.waitKey()
-
-    return img
-
-# ***Uncomment the below method if you dont want the overlapping characters to be split
-
-
-# def segment(cleaned):
-#     # Apply thresholding to get a binary image
-#     _, thresh = cv2.threshold(cleaned, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-    
-#     # Compute the Euclidean distance from every binary pixel to the nearest zero pixel
-#     dist_transform = cv2.distanceTransform(thresh, cv2.DIST_L2, 5)
-    
-#     # Normalize the distance image for better visualization and thresholding
-#     dist_transform = cv2.normalize(dist_transform, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
-    
-#     # Apply threshold to get the peaks in the distance transform
-#     _, sure_fg = cv2.threshold(dist_transform, 0.5 * dist_transform.max(), 255, 0)
-    
-#     # Use morphology to clean up the image, separating connected components
-#     kernel = np.ones((3, 3), np.uint8)
-#     sure_bg = cv2.dilate(thresh, kernel, iterations=5)
-    
-#     # Subtract the sure foreground from the sure background to get the unknown region
-#     sure_fg = np.uint8(sure_fg)
-#     unknown = cv2.subtract(sure_bg, sure_fg)
-    
-#     # Label the sure foreground and background
-#     _, markers = cv2.connectedComponents(sure_fg)
-    
-#     # Add one to all labels so that the background is labeled as 1
-#     markers = markers + 1
-    
-#     # Mark the unknown region as zero
-#     markers[unknown == 255] = 0
-    
-#     # Apply the watershed algorithm
-#     markers = cv2.watershed(cv2.cvtColor(cleaned, cv2.COLOR_GRAY2BGR), markers)
-    
-#     # Generate character segments using contours
-#     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    
-#     char_images = []
-#     for cnt in contours:
-#         x, y, w, h = cv2.boundingRect(cnt)
-#         if w > 5 and h > 5:
-#             char_images.append(cleaned[y:y+h, x:x+w])
-
-#     return char_images
 
 def resize_and_center_image(img, target_size=(100, 100)):
     # Get current size of the character image
