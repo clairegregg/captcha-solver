@@ -25,6 +25,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+myenv/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -163,3 +164,7 @@ cython_debug/
 claire-files/training
 claire-files/validate
 claire-files/font-training-data
+
+patrick-files/captcha-categorized-by-font
+patrick-files/training-data
+visualizations-some-good-examples/*
