@@ -23,6 +23,9 @@ def main():
     parser.add_argument('--username', help="TCD username to put in the output file", type=str)
     parser.add_argument('--model', help="Path to saved TFLite model")
     parser.add_argument('--verbose', default=False, type=bool)
+    parser.add_argument('--min-two-char', help='Mininum width where chracter is deemed as being two overlapping characters', type=int, default=40) 
+    parser.add_argument('--min-three-char', help='Mininum width where chracter is deemed as being three overlapping characters', type=int, default=60)
+    parser.add_argument('--min-four-char', help='Mininum width where chracter is deemed as being four overlapping characters', type=int, default=80)
     args = parser.parse_args()
 
     if args.captcha_dir is None:
@@ -63,7 +66,7 @@ def main():
         # load image and preprocess it
         raw_data = cv2.imread(os.path.join(args.captcha_dir, x))
         rgb_data = cv2.cvtColor(raw_data, cv2.COLOR_BGR2RGB)
-        preprocessed_characters = preprocess_testing.preprocess(rgb_data)
+        preprocessed_characters = preprocess_testing.preprocess(rgb_data, args.min_two_char, args.min_three_char, args.min_four_char)
         prediction = []
 
         for char in preprocessed_characters:
