@@ -162,4 +162,4 @@ cython_debug/
 #.idea/
 claire-files/training
 claire-files/validate
-claire-files/training-data
+claire-files/font-training-data
