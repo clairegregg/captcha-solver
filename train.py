@@ -167,8 +167,8 @@ def main():
     # assert len(physical_devices) > 0, "No GPU available!"
     # tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
-    with tf.device('/device:GPU:0'):
-    # with tf.device('/device:CPU:0'):
+    # with tf.device('/device:GPU:0'):
+    with tf.device('/device:CPU:0'):
         # with tf.device('/device:XLA_CPU:0'):
         model = create_model(len(captcha_symbols), (args.height, args.width, 1))
 
@@ -181,34 +181,26 @@ def main():
 
         model.summary()
 
-        # training_data = ImageSequence(
-        #     args.train_dataset, args.batch_size, captcha_symbols, args.width, args.height)
-        # validation_data = ImageSequence(
-        #     args.validate_dataset, args.batch_size, captcha_symbols, args.width, args.height)
-        
         training_data = ImageSequence(
-            args.train_dataset, args.batch_size, captcha_symbols, args.width, args.height,
-            args.min_two_char, args.min_three_char, args.min_four_char
-        )
+            args.train_dataset, args.batch_size, captcha_symbols, args.width, args.height)
         validation_data = ImageSequence(
-            args.validate_dataset, args.batch_size, captcha_symbols, args.width, args.height,
-            args.min_two_char, args.min_three_char, args.min_four_char
-        )
+            args.validate_dataset, args.batch_size, captcha_symbols, args.width, args.height)
 
 
         callbacks = [keras.callbacks.EarlyStopping(patience=3),
                      # keras.callbacks.CSVLogger('log.csv'),
-                     keras.callbacks.ModelCheckpoint(args.output_model_name+'.keras', save_best_only=False)]
+                     keras.callbacks.ModelCheckpoint(args.output_model_name+'.h5', save_best_only=False)]
 
         # Save the model architecture to JSON
         with open(args.output_model_name+".json", "w") as json_file:
             json_file.write(model.to_json())
 
         try:
-            model.fit(training_data,
-          validation_data=validation_data,
-          epochs=args.epochs,
-          callbacks=callbacks)
+            model.fit_generator(generator=training_data,
+                                validation_data=validation_data,
+                                epochs=args.epochs,
+                                callbacks=callbacks,
+                                use_multiprocessing=True)
         except KeyboardInterrupt:
             print('KeyboardInterrupt caught, saving current weights as ' +
                   args.output_model_name+'_resume.h5')
