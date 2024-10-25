@@ -168,3 +168,7 @@ claire-files/font-training-data
 patrick-files/captcha-categorized-by-font
 patrick-files/training-data
 visualizations-some-good-examples/*
+/claire-files/width-varying-data
+/claire-files/width-based-data
+/claire-files/clean
+*.keras

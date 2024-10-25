@@ -70,3 +70,102 @@ I fixed this in the next change, where I moved the preprocessing into the train 
 
 Done on the raspbery pi
 python3 classify_font_32bit.py --model_path=claire-files/font_classifier.tflite --input_dir=claire-files/captchas --output_dir=claire-files/captchas-categorised --class-name-1=DreamingofLilian --class-name-2=TheJjester
+
+## Finding appropriate symbol widths
+
+### DOL
+```
+python3 generate.py --width=192 --height=96 --font="claire-files/fonts/Dreaming of Lilian.ttf" --output-dir=claire-files/width-based-data/DreamingOfLilian --symbols=symbols.txt --count=2000 --length=1
+```
+
+Then
+```
+python3 get_char_average_size.py --captcha-dir=../claire-files/width-based-data/DreamingOfLilian
+```
+
+Giving 46.918 as average
+
+Next
+
+```
+python3 generate.py --width=192 --height=96 --font="claire-files/fonts/Dreaming of Lilian.ttf" --output-dir=claire-files/width-varying-data/DreamingOfLilian --symbols=symbols.txt --count=2000 --length=6 --vary-char-size
+```
+
+```
+python3 generate_2000_cleaned_images.py --captcha-dir=../claire-files/width-varying-data/DreamingOfLilian --output=../claire-files/clean/DreamingOfLilian
+```
+
+And finally, setting the ranges to 2chars (70, 110), 3 chars (115, 155), and 4 chars (160, 200), with steps of 10 for all.
+```
+python3 wider_range_test.py --captcha-dir=../claire-files/clean/DreamingOfLilian
+```
+
+Returned
+```
+1. Accuracy: 42.70%, two_char_min: 70, three_char_min: 135, four_char_min: 190
+2. Accuracy: 42.65%, two_char_min: 70, three_char_min: 125, four_char_min: 190
+3. Accuracy: 42.60%, two_char_min: 70, three_char_min: 135, four_char_min: 180
+4. Accuracy: 42.55%, two_char_min: 70, three_char_min: 125, four_char_min: 180
+5. Accuracy: 42.40%, two_char_min: 70, three_char_min: 115, four_char_min: 190
+6. Accuracy: 42.35%, two_char_min: 70, three_char_min: 135, four_char_min: 170
+7. Accuracy: 42.35%, two_char_min: 70, three_char_min: 145, four_char_min: 190
+8. Accuracy: 42.30%, two_char_min: 70, three_char_min: 115, four_char_min: 180
+9. Accuracy: 42.30%, two_char_min: 70, three_char_min: 125, four_char_min: 170
+10. Accuracy: 42.30%, two_char_min: 70, three_char_min: 135, four_char_min: 160
+```
+
+Then did (50, 70), (115, 135), (160,180)
+```
+1. Accuracy: 42.70%, two_char_min: 60, three_char_min: 125, four_char_min: 170
+2. Accuracy: 42.65%, two_char_min: 60, three_char_min: 125, four_char_min: 160
+3. Accuracy: 42.45%, two_char_min: 60, three_char_min: 115, four_char_min: 170
+4. Accuracy: 42.40%, two_char_min: 60, three_char_min: 115, four_char_min: 160
+5. Accuracy: 41.80%, two_char_min: 50, three_char_min: 125, four_char_min: 170
+6. Accuracy: 41.75%, two_char_min: 50, three_char_min: 125, four_char_min: 160
+7. Accuracy: 41.65%, two_char_min: 50, three_char_min: 115, four_char_min: 170
+8. Accuracy: 41.60%, two_char_min: 50, three_char_min: 115, four_char_min: 160
+```
+
+Finally, with steps of 1 (57,63), (122,128), (167,173) giving final best values of 57, 123, and 168.
+
+
+### JJ
+
+```
+python3 generate.py --width=192 --height=96 --font="claire-files/fonts/The Jjester.otf" --output-dir=claire-files/width-based-data/TheJjester --symbols=symbols.txt --count=2000 --length=1
+```
+
+Getting 20.263
+
+```
+python3 get_char_average_size.py --captcha-dir=../claire-files/width-based-data/TheJjester
+```
+
+```
+python3 generate.py --width=192 --height=96 --font="claire-files/fonts/The Jjester.otf" --output-dir=claire-files/width-varying-data/TheJjester --symbols=symbols.txt --count=2000 --length=6 --vary-char-size
+```
+
+```
+python3 generate_2000_cleaned_images.py --captcha-dir=../claire-files/width-varying-data/TheJjester --output=../claire-files/clean/TheJjester
+```
+
+And finally, setting the regions to 2 chars (30,50), 3 chars (50,70), 4 chars (70,90) with steps of 5 for all.
+```
+python3 wider_range_test.py --captcha-dir=../claire-files/clean/TheJjester
+```
+
+Returned
+```
+Top 10 combinations:
+1. Accuracy: 48.75%, two_char_min: 30, three_char_min: 50, four_char_min: 70
+2. Accuracy: 48.75%, two_char_min: 30, three_char_min: 50, four_char_min: 75
+3. Accuracy: 48.25%, two_char_min: 30, three_char_min: 50, four_char_min: 80
+4. Accuracy: 47.90%, two_char_min: 30, three_char_min: 50, four_char_min: 85
+5. Accuracy: 47.70%, two_char_min: 30, three_char_min: 55, four_char_min: 70
+6. Accuracy: 47.60%, two_char_min: 30, three_char_min: 55, four_char_min: 75
+7. Accuracy: 47.10%, two_char_min: 30, three_char_min: 55, four_char_min: 80
+8. Accuracy: 46.75%, two_char_min: 30, three_char_min: 55, four_char_min: 85
+9. Accuracy: 46.60%, two_char_min: 30, three_char_min: 60, four_char_min: 70
+10. Accuracy: 46.50%, two_char_min: 30, three_char_min: 60, four_char_min: 75
+```
+Then (20,25), (45,50), (65,70) giving final best values of 22, 48, 67.
