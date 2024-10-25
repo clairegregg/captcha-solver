@@ -85,3 +85,68 @@ python3 classify_captchas_font.py --input_dir=patrick-files/captchas --output_di
 
 
 
+
+## Instructions for identifying the ideal minimum width value to identify number of overlapping characters
+One issue with segmentation is that if characters are touching, they will be categorised as one character. The preprocessing code handles this by defining a width value that ideintifies a given segmented character as actually containing 2, 3 or 4 overlapping characters (we can then attempt to split these characters up). To identify the values that are ideal for these values, you can run the code/commands below for each font (as the value changes per font).
+
+**Repeat the steps below once for each font**
+
+### 1. Generate captchas (this step and step 2 are optional; they give you the average character length, which can be used to inform your starting point when testing different values)
+Generate 1 character-long captcha (I used 2000 for my testing, and the average code in part 2 below is hard coded for 2000 captchas). 
+```
+python3 generate.py --width=192 --height=96 --font=patrick-files/fonts/WildCrazy.ttf --output-dir=patrick-files/training-data/WildCrazy/1-char-captchas --symbols=symbols.txt --count=2000 --length=1
+```
+
+### 2. Calculate average character length (this is optional and only required if you carry out the above step as well)
+Once you have your 2000 captchas, you can call the code below, passing in the directory containing the 2000 1-character captchas to the code below. The average character length will be displayed to the console
+```
+python3 get_char_average_size.py --captcha-dir=/location-of-1-char-captchas
+```
+**All steps below this are mandatory**
+
+### 3. Generate captchas (these captchas will be used to test the accuracy of the segmentation)
+You will now generate 2000 captchas of varying character amounts from 2 - 6 (the arguments in the below command are set to do this already)
+
+Ensure that the count is set to 2000, length is 6 and --vary-char-size is present. Also, I recommend not changing the height or width specified below as this matches Kieran's captchas.
+```
+python3 generate.py --width=192 --height=96 --font=patrick-files/fonts/WildCrazy.ttf --output-dir=dir-for-output-captchas --symbols=symbols.txt --count=2000 --length=6 --vary-char-size
+```
+
+### 4. Clean the 2000 captchas generated above
+We now clean the captchas once so that we can reuse these captchas without having to clean them each time (this allows us to run tests pretty quickly).
+```
+python3 generate_2000_cleaned_images.py --captcha-dir=location-of-captchas-generated-above --output=location-for-cleaned-files
+```
+
+### 5. Run Tests
+Now that we have our 2000 cleaned files, we can run some tests to check a wide range of values and see how many captchas have been segmented with the correct number of characters. We can then pick the best-performing values for each. 
+
+You can use the average char size as a good starting point for each value (i.e. set 2 characters overlapping at values around average character length * 2, for three: average char length *3, etc.
+
+The below code is useful for testing a wide range of values; you can vary the ranges for each as you see fit; see line 226 and below for the ranges. You can specify the range of each min value you would like to test along with the step size. The model will test the combination of all these ranges and return the top 10 best-performing values. You can then rerun with different values if you would like until you get a score you are happy with. 
+
+The results will be printed to the console.
+
+```
+python3 wider_range_test.py --captcha-dir=location-of-cleaned-captchas
+```
+
+
+
+
+If you want to choose a smaller, more specific range of values, you can use the code below and hard code an array of values (see lines 231 - 262 for examples). Each index in each of the arrays will be tested so all the values in ind 0 of each array will be set as the min value for each character (again you must hard code these). I would recommend running this when you have a good idea of the range of values you want to test and want to check specific/more granular values. 
+
+```
+python3 best_segment_range.py --captcha-dir=location-of-cleaned-captchas
+```
+
+
+
+
+
+
+
+
+
+
+
