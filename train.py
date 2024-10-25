@@ -43,12 +43,15 @@ def create_model(captcha_num_symbols, input_shape, model_depth=5, module_size=2)
 
 
 class ImageSequence(keras.utils.Sequence):
-    def __init__(self, directory_name, batch_size, captcha_symbols, captcha_width, captcha_height):
+    def __init__(self, directory_name, batch_size, captcha_symbols, captcha_width, captcha_height, min_two_char, min_three_char, min_four_char):
         self.directory_name = directory_name
         self.batch_size = batch_size
         self.captcha_symbols = captcha_symbols
         self.captcha_width = captcha_width
         self.captcha_height = captcha_height
+        self.min_two_char = min_two_char
+        self.min_three_char = min_three_char
+        self.min_four_char = min_four_char
 
         file_list = [str(file) for file in Path(self.directory_name).rglob('*') if file.is_file()] # Retrieve files recursively
         self.files = dict(
@@ -77,7 +80,7 @@ class ImageSequence(keras.utils.Sequence):
             # We have to scale the input pixel values to the range [0, 1] for
             # Keras so we divide by 255 since the image is read in as 8-bit RGB
             raw_data = cv2.imread(random_image_file)
-            preprocessed_data = preprocess_testing.preprocess(raw_data)[0]
+            preprocessed_data = preprocess_testing.preprocess(raw_data, two_char_min=self.min_two_char, three_char_min=self.min_three_char, four_char_min=self.min_four_char)[0]
             processed_data = numpy.array(preprocessed_data) / 255
             processed_data = numpy.expand_dims(processed_data, axis=-1)
             X[i] = processed_data
@@ -113,6 +116,12 @@ def main():
         '--epochs', help='How many training epochs to run', type=int)
     parser.add_argument(
         '--symbols', help='File with the symbols to use in captchas', type=str)
+    parser.add_argument(
+        '--min-two-char', help='Mininum width where chracter is deemed as being two overlapping characters', type=int, default=40) 
+    parser.add_argument(
+        '--min-three-char', help='Mininum width where chracter is deemed as being three overlapping characters', type=int, default=60)
+    parser.add_argument(
+        '--min-four-char', help='Mininum width where chracter is deemed as being four overlapping characters', type=int, default=80)
     args = parser.parse_args()
 
     if args.width is None:
@@ -155,8 +164,8 @@ def main():
     # assert len(physical_devices) > 0, "No GPU available!"
     # tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
-    # with tf.device('/device:GPU:0'):
-    with tf.device('/device:CPU:0'):
+    with tf.device('/device:GPU:0'):
+    # with tf.device('/device:CPU:0'):
         # with tf.device('/device:XLA_CPU:0'):
         model = create_model(len(captcha_symbols), (args.height, args.width, 1))
 
@@ -169,25 +178,34 @@ def main():
 
         model.summary()
 
+        # training_data = ImageSequence(
+        #     args.train_dataset, args.batch_size, captcha_symbols, args.width, args.height)
+        # validation_data = ImageSequence(
+        #     args.validate_dataset, args.batch_size, captcha_symbols, args.width, args.height)
+        
         training_data = ImageSequence(
-            args.train_dataset, args.batch_size, captcha_symbols, args.width, args.height)
+            args.train_dataset, args.batch_size, captcha_symbols, args.width, args.height,
+            args.min_two_char, args.min_three_char, args.min_four_char
+        )
         validation_data = ImageSequence(
-            args.validate_dataset, args.batch_size, captcha_symbols, args.width, args.height)
+            args.validate_dataset, args.batch_size, captcha_symbols, args.width, args.height,
+            args.min_two_char, args.min_three_char, args.min_four_char
+        )
+
 
         callbacks = [keras.callbacks.EarlyStopping(patience=3),
                      # keras.callbacks.CSVLogger('log.csv'),
-                     keras.callbacks.ModelCheckpoint(args.output_model_name+'.h5', save_best_only=False)]
+                     keras.callbacks.ModelCheckpoint(args.output_model_name+'.keras', save_best_only=False)]
 
         # Save the model architecture to JSON
         with open(args.output_model_name+".json", "w") as json_file:
             json_file.write(model.to_json())
 
         try:
-            model.fit_generator(generator=training_data,
-                                validation_data=validation_data,
-                                epochs=args.epochs,
-                                callbacks=callbacks,
-                                use_multiprocessing=True)
+            model.fit(training_data,
+          validation_data=validation_data,
+          epochs=args.epochs,
+          callbacks=callbacks)
         except KeyboardInterrupt:
             print('KeyboardInterrupt caught, saving current weights as ' +
                   args.output_model_name+'_resume.h5')
