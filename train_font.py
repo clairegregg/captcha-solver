@@ -4,6 +4,7 @@ import os
 import argparse
 
 # Set up argument parser
+parser = argparse.ArgumentParser()
 parser.add_argument('--data_dir', type=str, required=True, help='Directory containing training data')
 parser.add_argument('--batch_size', type=int, default=64, help='Batch size for training')
 parser.add_argument('--img_height', type=int, default=96, help='Height of the input images')

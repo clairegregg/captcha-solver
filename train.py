@@ -80,7 +80,10 @@ class ImageSequence(keras.utils.Sequence):
             # We have to scale the input pixel values to the range [0, 1] for
             # Keras so we divide by 255 since the image is read in as 8-bit RGB
             raw_data = cv2.imread(random_image_file)
-            preprocessed_data = preprocess_testing.preprocess(raw_data, two_char_min=self.min_two_char, three_char_min=self.min_three_char, four_char_min=self.min_four_char)[0]
+            chars = preprocess_testing.preprocess(raw_data, two_char_min=self.min_two_char, three_char_min=self.min_three_char, four_char_min=self.min_four_char)
+            if len(chars) < 1: # If 0 chars are identified, segmentation failed 
+                break
+            preprocessed_data = chars[0]
             processed_data = numpy.array(preprocessed_data) / 255
             processed_data = numpy.expand_dims(processed_data, axis=-1)
             X[i] = processed_data
