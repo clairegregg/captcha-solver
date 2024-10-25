@@ -73,7 +73,7 @@ def preprocess_image(img_path):
             img = img.convert('RGB')  # Convert to RGB
 
         img = img.resize((IMAGE_WIDTH, IMAGE_HEIGHT))
-        img_array = img.img_to_array(img)
+        img_array = np.array(img, dtype='float32')
 
         if COLOR_MODE == 'grayscale':
             img_array = img_array.reshape((IMAGE_HEIGHT, IMAGE_WIDTH, 1))
@@ -135,7 +135,7 @@ def main():
     print(f"Class names: {class_names}")
 
     # Classify and organize images
-    classify_images(interpreter, class_names, input_dir, output_dir, class_names)
+    classify_images(interpreter, class_names, input_dir, output_dir)
     print("Classification and organization complete.")
 
 
