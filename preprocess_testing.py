@@ -162,7 +162,7 @@ def segment(cleaned, two_char_min , three_char_min, four_char_min, index = 0, vi
         # Remove characters that are likely just noise
         if w > 6 and h > 6:
             char_image = cleaned[y:y+h, x:x+w]
-            if w > 40 and w <= 70:
+            if w > two_char_min and w <= three_char_min:
                 # This is likely an image that has two overlapping characters
                 column_sums = np.sum(char_image == 0, axis=0)
                 padding_value = 0.3
@@ -205,7 +205,7 @@ def segment(cleaned, two_char_min , three_char_min, four_char_min, index = 0, vi
                 # Append the resized and centered images along with their x-coordinates
                 char_images_with_positions.append((left_x, resize_and_center_image(left_char)))
                 char_images_with_positions.append((right_x, resize_and_center_image(right_char)))
-            elif w > 70 and w <= 100:
+            elif w > three_char_min and w <= four_char_min:
                 # This is likely an image with three overlapping characters
                 column_sums = np.sum(char_image == 0, axis=0)
                 # padding_value = 0.2
@@ -263,7 +263,7 @@ def segment(cleaned, two_char_min , three_char_min, four_char_min, index = 0, vi
                 char_images_with_positions.append((second_x, resize_and_center_image(second_char)))
                 char_images_with_positions.append((third_x, resize_and_center_image(third_char)))
             
-            elif w > 100:
+            elif w > four_char_min:
                 # This is likely an image with four overlapping characters
                 column_sums = np.sum(char_image == 0, axis=0)
                 padding_value = 0.1
