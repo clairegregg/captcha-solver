@@ -18,7 +18,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # Build a Keras model given some parameters
 
-def create_model(captcha_num_symbols, input_shape, model_depth=5, module_size=2):
+def create_model(captcha_num_symbols, input_shape, model_depth=3, module_size=2):
     input_tensor = keras.Input(input_shape)
     x = input_tensor
     for i, module_length in enumerate([module_size] * model_depth):
@@ -81,7 +81,7 @@ class ImageSequence(keras.utils.Sequence):
             # Keras so we divide by 255 since the image is read in as 8-bit RGB
             raw_data = cv2.imread(random_image_file)
             chars = preprocess_testing.preprocess(raw_data, two_char_min=self.min_two_char, three_char_min=self.min_three_char, four_char_min=self.min_four_char)
-            if len(chars) < 1: # If 0 chars are identified, segmentation failed 
+            if len(chars) != 1: # If 0 chars are identified, segmentation failed 
                 break
             preprocessed_data = chars[0]
             processed_data = numpy.array(preprocessed_data) / 255
